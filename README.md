@@ -11,6 +11,7 @@ Features
 - **Linux Support**: Runs on Ubuntu runners (x86_64 and ARM64)
 - **Flexible Options**: Configurable verbose output and response time display
 - **Rich Testing**: Supports HTTP, SSH, Database, Browser, Shell, SMTP, and IMAP actions
+- **Rate Limit Safe**: Uses GitHub token for API calls to avoid rate limiting
 
 Usage
 --

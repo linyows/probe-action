@@ -73,9 +73,28 @@ runs:
         # Set version
         if [ "${{ inputs.version }}" = "latest" ]; then
           if [ "$ACTION_DEBUG" = "true" ]; then
-            echo "Using known latest version v0.20.1 (fallback for reliability)"
+            echo "Fetching latest version from GitHub API..."
           fi
-          VERSION="v0.20.1"
+          
+          # Try to get latest version from GitHub API with authentication
+          if [ -n "${{ github.token }}" ]; then
+            VERSION=$(curl -s -H "Authorization: token ${{ github.token }}" \
+              https://api.github.com/repos/linyows/probe/releases/latest | \
+              grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r')
+          else
+            VERSION=$(curl -s https://api.github.com/repos/linyows/probe/releases/latest | \
+              grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r')
+          fi
+          
+          # Fallback to known version if API fails
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            if [ "$ACTION_DEBUG" = "true" ]; then
+              echo "Failed to fetch from API, using fallback version v0.20.1"
+            fi
+            VERSION="v0.20.1"
+          elif [ "$ACTION_DEBUG" = "true" ]; then
+            echo "Successfully fetched version: $VERSION"
+          fi
         else
           VERSION="${{ inputs.version }}"
         fi
