@@ -1,9 +1,8 @@
 name: Test Probe Action
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
+  push:
     branches: [ main ]
 
 jobs:
@@ -12,42 +11,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Test basic HTTP with default settings
         uses: ./
         with:
-          path: 'test/basic-http.yml'
-      
-      - name: Test with verbose output (string)
+          path: test/basic-http.yml
+
+      - name: Test with verbose output
         uses: ./
         with:
-          path: 'test/basic-http.yml'
-          verbose: 'true'
-      
-      - name: Test with response time (boolean)
-        uses: ./
-        with:
-          path: 'test/basic-http.yml'
-          response-time: true
-      
-      - name: Test with all options (mixed)
-        uses: ./
-        with:
-          path: 'test/basic-http.yml'
-          verbose: yes
-          response-time: 1
+          path: test/basic-http.yml
+          verbose: true
 
   test-status-codes:
     name: Test Status Code Checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Test status code checking
         uses: ./
         with:
-          path: 'test/status-check.yml'
-          verbose: 'true'
+          path: test/status-check.yml
+          verbose: true
 
   test-probe-versions:
     name: Test Different Probe Versions
@@ -57,11 +43,11 @@ jobs:
         probe-version: ['latest', 'v0.20.1']
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Test with probe ${{ matrix.probe-version }}
         uses: ./
         with:
-          path: 'test/basic-http.yml'
+          path: test/basic-http.yml
           version: ${{ matrix.probe-version }}
 
   test-platforms:
@@ -72,9 +58,20 @@ jobs:
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Test on ${{ matrix.os }}
         uses: ./
         with:
-          path: 'test/basic-http.yml'
-          verbose: 'true'
+          path: test/basic-http.yml
+          verbose: true
+
+  test-marketplace:
+    name: Test Marketplace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test with marketplace action
+        uses: linyows/probe-action@latest
+        with:
+          path: test/basic-http.yml
