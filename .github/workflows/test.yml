@@ -16,24 +16,24 @@ jobs:
       - name: Test basic HTTP with default settings
         uses: ./
         with:
-          workflow-path: 'test/basic-http.yml'
+          path: 'test/basic-http.yml'
       
       - name: Test with verbose output
         uses: ./
         with:
-          workflow-path: 'test/basic-http.yml'
+          path: 'test/basic-http.yml'
           verbose: 'true'
       
       - name: Test with response time
         uses: ./
         with:
-          workflow-path: 'test/basic-http.yml'
+          path: 'test/basic-http.yml'
           response-time: 'true'
       
       - name: Test with all options
         uses: ./
         with:
-          workflow-path: 'test/basic-http.yml'
+          path: 'test/basic-http.yml'
           verbose: 'true'
           response-time: 'true'
 
@@ -46,7 +46,7 @@ jobs:
       - name: Test status code checking
         uses: ./
         with:
-          workflow-path: 'test/status-check.yml'
+          path: 'test/status-check.yml'
           verbose: 'true'
 
   test-probe-versions:
@@ -61,8 +61,8 @@ jobs:
       - name: Test with probe ${{ matrix.probe-version }}
         uses: ./
         with:
-          workflow-path: 'test/basic-http.yml'
-          probe-version: ${{ matrix.probe-version }}
+          path: 'test/basic-http.yml'
+          version: ${{ matrix.probe-version }}
 
   test-platforms:
     name: Test Cross-Platform
@@ -76,5 +76,5 @@ jobs:
       - name: Test on ${{ matrix.os }}
         uses: ./
         with:
-          workflow-path: 'test/basic-http.yml'
+          path: 'test/basic-http.yml'
           verbose: 'true'

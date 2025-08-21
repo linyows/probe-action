@@ -28,7 +28,7 @@ jobs:
       - name: Run probe tests
         uses: linyows/probe-action@v1
         with:
-          workflow-path: 'tests/api-test.yml'
+          path: 'tests/api-test.yml'
 ```
 
 Inputs
@@ -36,8 +36,8 @@ Inputs
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `workflow-path` | Path to the probe workflow YAML file | Yes | - |
-| `probe-version` | Version of probe to use | - | `latest` |
+| `path` | Path to the probe workflow YAML file | Yes | - |
+| `version` | Version of probe to use | - | `latest` |
 | `verbose` | Enable verbose output | - | `false` |
 | `response-time` | Show response times | - | `false` |
 
@@ -101,7 +101,7 @@ Enable verbose output and response times for detailed information:
 ```yaml
 - uses: linyows/probe-action@v1
   with:
-    workflow-path: 'tests/debug-test.yml'
+    path: 'tests/debug-test.yml'
     verbose: 'true'
 ```
 

@@ -3,10 +3,10 @@ description: 'Run probe workflow automation tool'
 author: 'linyows'
 
 inputs:
-  workflow-path:
+  path:
     description: 'Path to the workflow YAML file'
     required: true
-  probe-version:
+  version:
     description: 'Version of probe to use (default: latest)'
     required: false
     default: 'latest'
@@ -55,11 +55,11 @@ runs:
         echo "Detected platform: ${OS}_${ARCH}"
         
         # Set version
-        if [ "${{ inputs.probe-version }}" = "latest" ]; then
+        if [ "${{ inputs.version }}" = "latest" ]; then
           echo "Using known latest version v0.20.1 (fallback for reliability)"
           VERSION="v0.20.1"
         else
-          VERSION="${{ inputs.probe-version }}"
+          VERSION="${{ inputs.version }}"
         fi
         
         echo "Using probe version: $VERSION"
@@ -100,8 +100,8 @@ runs:
         echo "Probe binary ready: $(./probe --version 2>/dev/null || echo 'version check failed')"
         
         # Verify workflow file exists
-        if [ ! -f "${{ inputs.workflow-path }}" ]; then
-          echo "Error: Workflow file not found: ${{ inputs.workflow-path }}"
+        if [ ! -f "${{ inputs.path }}" ]; then
+          echo "Error: Workflow file not found: ${{ inputs.path }}"
           echo "Current directory contents:"
           find . -name "*.yml" -o -name "*.yaml" | head -10
           exit 1
@@ -117,10 +117,10 @@ runs:
         fi
         
         # Run probe
-        echo "Running probe with workflow: ${{ inputs.workflow-path }}"
-        echo "Command: ./probe${PROBE_ARGS} ${{ inputs.workflow-path }}"
+        echo "Running probe with workflow: ${{ inputs.path }}"
+        echo "Command: ./probe${PROBE_ARGS} ${{ inputs.path }}"
         
-        ./probe $PROBE_ARGS "${{ inputs.workflow-path }}"
+        ./probe $PROBE_ARGS "${{ inputs.path }}"
       shell: bash
 
 branding:
