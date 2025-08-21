@@ -153,10 +153,10 @@ runs:
         # Run probe
         if [ "$ACTION_DEBUG" = "true" ]; then
           echo "Running probe with workflow: ${{ inputs.path }}"
-          echo "Command: ./probe${PROBE_ARGS} ${{ inputs.path }}"
+          echo "Command: FORCE_COLOR=1 ./probe${PROBE_ARGS} ${{ inputs.path }}"
         fi
 
-        ./probe $PROBE_ARGS "${{ inputs.path }}"
+        FORCE_COLOR=1 ./probe $PROBE_ARGS "${{ inputs.path }}"
       shell: bash
 
 branding:
