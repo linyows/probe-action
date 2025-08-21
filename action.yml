@@ -24,7 +24,12 @@ runs:
   steps:
     - name: Download and run probe
       run: |
-        set -e
+        set -euo pipefail
+        
+        # Debug: Show environment info
+        echo "Debug: OS=$(uname -s), ARCH=$(uname -m)"
+        echo "Debug: Current directory: $(pwd)"
+        echo "Debug: Available files: $(ls -la)"
         
         # Determine OS and architecture
         OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -33,25 +38,71 @@ runs:
         case $ARCH in
           x86_64) ARCH="x86_64" ;;
           aarch64|arm64) ARCH="arm64" ;;
-          *) echo "Unsupported architecture: $ARCH" && exit 1 ;;
+          *) 
+            echo "Error: Unsupported architecture: $ARCH" 
+            echo "Supported architectures: x86_64, aarch64, arm64"
+            exit 1 
+            ;;
         esac
+        
+        echo "Detected platform: ${OS}_${ARCH}"
         
         # Set version
         if [ "${{ inputs.probe-version }}" = "latest" ]; then
+          echo "Fetching latest version info..."
           VERSION=$(curl -s https://api.github.com/repos/linyows/probe/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "Error: Failed to fetch latest version"
+            exit 1
+          fi
         else
-          VERSION=${{ inputs.probe-version }}
+          VERSION="${{ inputs.probe-version }}"
         fi
         
-        echo "Downloading probe $VERSION for ${OS}_${ARCH}"
+        echo "Using probe version: $VERSION"
         
         # Download probe
         DOWNLOAD_URL="https://github.com/linyows/probe/releases/download/${VERSION}/probe_${OS}_${ARCH}.tar.gz"
-        curl -L -o probe.tar.gz "$DOWNLOAD_URL"
+        echo "Downloading from: $DOWNLOAD_URL"
+        
+        if ! curl -L -f -o probe.tar.gz "$DOWNLOAD_URL"; then
+          echo "Error: Failed to download probe from $DOWNLOAD_URL"
+          echo "Please check if the version exists and supports your platform"
+          exit 1
+        fi
+        
+        # Verify download
+        if [ ! -f probe.tar.gz ]; then
+          echo "Error: probe.tar.gz not found after download"
+          exit 1
+        fi
+        
+        echo "Download successful, extracting..."
         
         # Extract binary
-        tar -xzf probe.tar.gz
+        if ! tar -xzf probe.tar.gz; then
+          echo "Error: Failed to extract probe.tar.gz"
+          exit 1
+        fi
+        
+        # Verify extraction
+        if [ ! -f probe ]; then
+          echo "Error: probe binary not found after extraction"
+          echo "Archive contents:"
+          tar -tzf probe.tar.gz || echo "Failed to list archive contents"
+          exit 1
+        fi
+        
         chmod +x probe
+        echo "Probe binary ready: $(./probe --version 2>/dev/null || echo 'version check failed')"
+        
+        # Verify workflow file exists
+        if [ ! -f "${{ inputs.workflow-path }}" ]; then
+          echo "Error: Workflow file not found: ${{ inputs.workflow-path }}"
+          echo "Current directory contents:"
+          find . -name "*.yml" -o -name "*.yaml" | head -10
+          exit 1
+        fi
         
         # Build command arguments
         PROBE_ARGS=""
@@ -64,6 +115,8 @@ runs:
         
         # Run probe
         echo "Running probe with workflow: ${{ inputs.workflow-path }}"
+        echo "Command: ./probe${PROBE_ARGS} ${{ inputs.workflow-path }}"
+        
         ./probe $PROBE_ARGS "${{ inputs.workflow-path }}"
       shell: bash
 
