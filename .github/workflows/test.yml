@@ -22,7 +22,7 @@ jobs:
         with:
           path: test/basic-http.yml
           verbose: true
-      
+
       - name: Test with action debug
         uses: ./
         with:
@@ -78,6 +78,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Test with marketplace action
-        uses: linyows/probe-action@v0.1.1
+        uses: linyows/probe-action@main
         with:
           path: test/basic-http.yml
