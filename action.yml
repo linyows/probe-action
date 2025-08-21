@@ -25,23 +25,23 @@ runs:
     - name: Download and run probe
       run: |
         set -euo pipefail
-        
+
         # Debug: Show environment info
-        echo "Debug: OS=$(uname -s), ARCH=$(uname -m)"
-        echo "Debug: Current directory: $(pwd)"
-        echo "Debug: Available files: $(ls -la)"
-        
+        #echo "Debug: OS=$(uname -s), ARCH=$(uname -m)"
+        #echo "Debug: Current directory: $(pwd)"
+        #echo "Debug: Available files: $(ls -la)"
+
         # Determine OS and architecture
         OS=$(uname -s | tr '[:upper:]' '[:lower:]')
         ARCH=$(uname -m)
-        
+
         # Only support Linux for now
         if [ "$OS" != "linux" ]; then
           echo "Error: Currently only Linux is supported"
           echo "Detected OS: $OS"
           exit 1
         fi
-        
+
         case $ARCH in
           x86_64) ARCH="x86_64" ;;
           aarch64|arm64) ARCH="arm64" ;;
@@ -51,9 +51,9 @@ runs:
             exit 1 
             ;;
         esac
-        
+
         echo "Detected platform: ${OS}_${ARCH}"
-        
+
         # Set version
         if [ "${{ inputs.version }}" = "latest" ]; then
           echo "Using known latest version v0.20.1 (fallback for reliability)"
@@ -61,33 +61,33 @@ runs:
         else
           VERSION="${{ inputs.version }}"
         fi
-        
+
         echo "Using probe version: $VERSION"
-        
+
         # Download probe
         DOWNLOAD_URL="https://github.com/linyows/probe/releases/download/${VERSION}/probe_${OS}_${ARCH}.tar.gz"
         echo "Downloading from: $DOWNLOAD_URL"
-        
+
         if ! curl -L -f -s -S -o probe.tar.gz "$DOWNLOAD_URL"; then
           echo "Error: Failed to download probe from $DOWNLOAD_URL"
           echo "Please check if the version exists and supports your platform"
           exit 1
         fi
-        
+
         # Verify download
         if [ ! -f probe.tar.gz ]; then
           echo "Error: probe.tar.gz not found after download"
           exit 1
         fi
-        
+
         echo "Download successful, extracting..."
-        
+
         # Extract binary
         if ! tar -xzf probe.tar.gz; then
           echo "Error: Failed to extract probe.tar.gz"
           exit 1
         fi
-        
+
         # Verify extraction
         if [ ! -f probe ]; then
           echo "Error: probe binary not found after extraction"
@@ -95,10 +95,10 @@ runs:
           tar -tzf probe.tar.gz || echo "Failed to list archive contents"
           exit 1
         fi
-        
+
         chmod +x probe
         echo "Probe binary ready: $(./probe --version 2>/dev/null || echo 'version check failed')"
-        
+
         # Verify workflow file exists
         if [ ! -f "${{ inputs.path }}" ]; then
           echo "Error: Workflow file not found: ${{ inputs.path }}"
@@ -106,26 +106,26 @@ runs:
           find . -name "*.yml" -o -name "*.yaml" | head -10
           exit 1
         fi
-        
+
         # Build command arguments
         PROBE_ARGS=""
-        
+
         # Check verbose flag (supports various boolean formats)
         VERBOSE_INPUT="${{ inputs.verbose }}"
         if [ "${VERBOSE_INPUT,,}" = "true" ] || [ "${VERBOSE_INPUT}" = "1" ] || [ "${VERBOSE_INPUT,,}" = "yes" ]; then
           PROBE_ARGS="$PROBE_ARGS --verbose"
         fi
-        
+
         # Check response-time flag (supports various boolean formats)  
         RT_INPUT="${{ inputs.response-time }}"
         if [ "${RT_INPUT,,}" = "true" ] || [ "${RT_INPUT}" = "1" ] || [ "${RT_INPUT,,}" = "yes" ]; then
           PROBE_ARGS="$PROBE_ARGS --rt"
         fi
-        
+
         # Run probe
         echo "Running probe with workflow: ${{ inputs.path }}"
         echo "Command: ./probe${PROBE_ARGS} ${{ inputs.path }}"
-        
+
         ./probe $PROBE_ARGS "${{ inputs.path }}"
       shell: bash
 
