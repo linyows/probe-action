@@ -40,6 +40,7 @@ Inputs
 | `version` | Version of probe to use | - | `latest` |
 | `verbose` | Enable verbose output (true/false/yes/1) | - | `false` |
 | `response-time` | Show response times (true/false/yes/1) | - | `false` |
+| `action-debug` | Enable action debug output (true/false/yes/1) | - | `false` |
 
 Sample Probe Workflow
 --
@@ -103,6 +104,7 @@ Enable verbose output and response times for detailed information:
   with:
     path: 'tests/debug-test.yml'
     verbose: 'true'
+    action-debug: 'true'  # Shows action internal debug information
 ```
 
 Contributing

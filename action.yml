@@ -18,6 +18,10 @@ inputs:
     description: 'Show response times'
     required: false
     default: 'false'
+  action-debug:
+    description: 'Enable action debug output (true/false/yes/1)'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -25,11 +29,21 @@ runs:
     - name: Download and run probe
       run: |
         set -euo pipefail
+        
+        # Check action-debug flag
+        DEBUG_INPUT="${{ inputs.action-debug }}"
+        if [ "${DEBUG_INPUT,,}" = "true" ] || [ "${DEBUG_INPUT}" = "1" ] || [ "${DEBUG_INPUT,,}" = "yes" ]; then
+          ACTION_DEBUG=true
+        else
+          ACTION_DEBUG=false
+        fi
 
-        # Debug: Show environment info
-        #echo "Debug: OS=$(uname -s), ARCH=$(uname -m)"
-        #echo "Debug: Current directory: $(pwd)"
-        #echo "Debug: Available files: $(ls -la)"
+        # Debug: Show environment info (only if action-debug is enabled)
+        if [ "$ACTION_DEBUG" = "true" ]; then
+          echo "Debug: OS=$(uname -s), ARCH=$(uname -m)"
+          echo "Debug: Current directory: $(pwd)"
+          echo "Debug: Available files: $(ls -la)"
+        fi
 
         # Determine OS and architecture
         OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -52,21 +66,29 @@ runs:
             ;;
         esac
 
-        echo "Detected platform: ${OS}_${ARCH}"
+        if [ "$ACTION_DEBUG" = "true" ]; then
+          echo "Detected platform: ${OS}_${ARCH}"
+        fi
 
         # Set version
         if [ "${{ inputs.version }}" = "latest" ]; then
-          echo "Using known latest version v0.20.1 (fallback for reliability)"
+          if [ "$ACTION_DEBUG" = "true" ]; then
+            echo "Using known latest version v0.20.1 (fallback for reliability)"
+          fi
           VERSION="v0.20.1"
         else
           VERSION="${{ inputs.version }}"
         fi
 
-        echo "Using probe version: $VERSION"
+        if [ "$ACTION_DEBUG" = "true" ]; then
+          echo "Using probe version: $VERSION"
+        fi
 
         # Download probe
         DOWNLOAD_URL="https://github.com/linyows/probe/releases/download/${VERSION}/probe_${OS}_${ARCH}.tar.gz"
-        echo "Downloading from: $DOWNLOAD_URL"
+        if [ "$ACTION_DEBUG" = "true" ]; then
+          echo "Downloading from: $DOWNLOAD_URL"
+        fi
 
         if ! curl -L -f -s -S -o probe.tar.gz "$DOWNLOAD_URL"; then
           echo "Error: Failed to download probe from $DOWNLOAD_URL"
@@ -80,7 +102,9 @@ runs:
           exit 1
         fi
 
-        echo "Download successful, extracting..."
+        if [ "$ACTION_DEBUG" = "true" ]; then
+          echo "Download successful, extracting..."
+        fi
 
         # Extract binary
         if ! tar -xzf probe.tar.gz; then
@@ -97,13 +121,17 @@ runs:
         fi
 
         chmod +x probe
-        echo "Probe binary ready: $(./probe --version 2>/dev/null || echo 'version check failed')"
+        if [ "$ACTION_DEBUG" = "true" ]; then
+          echo "Probe binary ready: $(./probe --version 2>/dev/null || echo 'version check failed')"
+        fi
 
         # Verify workflow file exists
         if [ ! -f "${{ inputs.path }}" ]; then
           echo "Error: Workflow file not found: ${{ inputs.path }}"
-          echo "Current directory contents:"
-          find . -name "*.yml" -o -name "*.yaml" | head -10
+          if [ "$ACTION_DEBUG" = "true" ]; then
+            echo "Current directory contents:"
+            find . -name "*.yml" -o -name "*.yaml" | head -10
+          fi
           exit 1
         fi
 
@@ -123,8 +151,10 @@ runs:
         fi
 
         # Run probe
-        echo "Running probe with workflow: ${{ inputs.path }}"
-        echo "Command: ./probe${PROBE_ARGS} ${{ inputs.path }}"
+        if [ "$ACTION_DEBUG" = "true" ]; then
+          echo "Running probe with workflow: ${{ inputs.path }}"
+          echo "Command: ./probe${PROBE_ARGS} ${{ inputs.path }}"
+        fi
 
         ./probe $PROBE_ARGS "${{ inputs.path }}"
       shell: bash

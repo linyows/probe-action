@@ -22,6 +22,12 @@ jobs:
         with:
           path: test/basic-http.yml
           verbose: true
+      
+      - name: Test with action debug
+        uses: ./
+        with:
+          path: test/basic-http.yml
+          action-debug: true
 
   test-status-codes:
     name: Test Status Code Checks
