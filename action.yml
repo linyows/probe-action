@@ -68,7 +68,7 @@ runs:
         DOWNLOAD_URL="https://github.com/linyows/probe/releases/download/${VERSION}/probe_${OS}_${ARCH}.tar.gz"
         echo "Downloading from: $DOWNLOAD_URL"
         
-        if ! curl -L -f -o probe.tar.gz "$DOWNLOAD_URL"; then
+        if ! curl -L -f -s -S -o probe.tar.gz "$DOWNLOAD_URL"; then
           echo "Error: Failed to download probe from $DOWNLOAD_URL"
           echo "Please check if the version exists and supports your platform"
           exit 1
