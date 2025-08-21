@@ -18,24 +18,24 @@ jobs:
         with:
           path: 'test/basic-http.yml'
       
-      - name: Test with verbose output
+      - name: Test with verbose output (string)
         uses: ./
         with:
           path: 'test/basic-http.yml'
           verbose: 'true'
       
-      - name: Test with response time
+      - name: Test with response time (boolean)
         uses: ./
         with:
           path: 'test/basic-http.yml'
-          response-time: 'true'
+          response-time: true
       
-      - name: Test with all options
+      - name: Test with all options (mixed)
         uses: ./
         with:
           path: 'test/basic-http.yml'
-          verbose: 'true'
-          response-time: 'true'
+          verbose: yes
+          response-time: 1
 
   test-status-codes:
     name: Test Status Code Checks

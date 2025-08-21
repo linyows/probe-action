@@ -109,10 +109,16 @@ runs:
         
         # Build command arguments
         PROBE_ARGS=""
-        if [ "${{ inputs.verbose }}" = "true" ]; then
+        
+        # Check verbose flag (supports various boolean formats)
+        VERBOSE_INPUT="${{ inputs.verbose }}"
+        if [ "${VERBOSE_INPUT,,}" = "true" ] || [ "${VERBOSE_INPUT}" = "1" ] || [ "${VERBOSE_INPUT,,}" = "yes" ]; then
           PROBE_ARGS="$PROBE_ARGS --verbose"
         fi
-        if [ "${{ inputs.response-time }}" = "true" ]; then
+        
+        # Check response-time flag (supports various boolean formats)  
+        RT_INPUT="${{ inputs.response-time }}"
+        if [ "${RT_INPUT,,}" = "true" ] || [ "${RT_INPUT}" = "1" ] || [ "${RT_INPUT,,}" = "yes" ]; then
           PROBE_ARGS="$PROBE_ARGS --rt"
         fi
         

@@ -38,8 +38,8 @@ Inputs
 |-------|-------------|----------|---------|
 | `path` | Path to the probe workflow YAML file | Yes | - |
 | `version` | Version of probe to use | - | `latest` |
-| `verbose` | Enable verbose output | - | `false` |
-| `response-time` | Show response times | - | `false` |
+| `verbose` | Enable verbose output (true/false/yes/1) | - | `false` |
+| `response-time` | Show response times (true/false/yes/1) | - | `false` |
 
 Sample Probe Workflow
 --
