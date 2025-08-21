@@ -72,6 +72,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Test with marketplace action
-        uses: linyows/probe-action@v0.1.0
+        uses: linyows/probe-action@v0.1.1
         with:
           path: test/basic-http.yml
