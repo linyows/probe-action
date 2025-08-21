@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run probe tests
-        uses: linyows/probe-action@v1
+        uses: linyows/probe-action@main
         with:
           path: 'tests/api-test.yml'
 ```
@@ -101,7 +101,7 @@ Debugging
 Enable verbose output and response times for detailed information:
 
 ```yaml
-- uses: linyows/probe-action@v1
+- uses: linyows/probe-action@main
   with:
     path: 'tests/debug-test.yml'
     verbose: 'true'
