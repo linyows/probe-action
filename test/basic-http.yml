@@ -1,0 +1,19 @@
+name: Basic HTTP Test
+description: Test basic HTTP functionality
+
+jobs:
+  - name: HTTP Test
+    steps:
+      - name: Test HTTP GET
+        uses: http
+        with:
+          get: https://httpbin.org/get
+        test: "res.code == 200"
+      
+      - name: Test HTTP POST
+        uses: http
+        with:
+          post: https://httpbin.org/post
+          json:
+            test_data: "hello world"
+        test: "res.code == 200"

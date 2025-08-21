@@ -1,0 +1,72 @@
+name: 'Probe Action'
+description: 'Run probe workflow automation tool'
+author: 'linyows'
+
+inputs:
+  workflow-path:
+    description: 'Path to the workflow YAML file'
+    required: true
+  probe-version:
+    description: 'Version of probe to use (default: latest)'
+    required: false
+    default: 'latest'
+  verbose:
+    description: 'Enable verbose output'
+    required: false
+    default: 'false'
+  response-time:
+    description: 'Show response times'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Download and run probe
+      run: |
+        set -e
+        
+        # Determine OS and architecture
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+        ARCH=$(uname -m)
+        
+        case $ARCH in
+          x86_64) ARCH="x86_64" ;;
+          aarch64|arm64) ARCH="arm64" ;;
+          *) echo "Unsupported architecture: $ARCH" && exit 1 ;;
+        esac
+        
+        # Set version
+        if [ "${{ inputs.probe-version }}" = "latest" ]; then
+          VERSION=$(curl -s https://api.github.com/repos/linyows/probe/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        else
+          VERSION=${{ inputs.probe-version }}
+        fi
+        
+        echo "Downloading probe $VERSION for ${OS}_${ARCH}"
+        
+        # Download probe
+        DOWNLOAD_URL="https://github.com/linyows/probe/releases/download/${VERSION}/probe_${OS}_${ARCH}.tar.gz"
+        curl -L -o probe.tar.gz "$DOWNLOAD_URL"
+        
+        # Extract binary
+        tar -xzf probe.tar.gz
+        chmod +x probe
+        
+        # Build command arguments
+        PROBE_ARGS=""
+        if [ "${{ inputs.verbose }}" = "true" ]; then
+          PROBE_ARGS="$PROBE_ARGS --verbose"
+        fi
+        if [ "${{ inputs.response-time }}" = "true" ]; then
+          PROBE_ARGS="$PROBE_ARGS --rt"
+        fi
+        
+        # Run probe
+        echo "Running probe with workflow: ${{ inputs.workflow-path }}"
+        ./probe $PROBE_ARGS "${{ inputs.workflow-path }}"
+      shell: bash
+
+branding:
+  icon: 'activity'
+  color: 'blue'

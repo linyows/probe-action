@@ -1,0 +1,80 @@
+name: Test Probe Action
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-basic:
+    name: Test Basic HTTP Functionality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Test basic HTTP with default settings
+        uses: ./
+        with:
+          workflow-path: 'test/basic-http.yml'
+      
+      - name: Test with verbose output
+        uses: ./
+        with:
+          workflow-path: 'test/basic-http.yml'
+          verbose: 'true'
+      
+      - name: Test with response time
+        uses: ./
+        with:
+          workflow-path: 'test/basic-http.yml'
+          response-time: 'true'
+      
+      - name: Test with all options
+        uses: ./
+        with:
+          workflow-path: 'test/basic-http.yml'
+          verbose: 'true'
+          response-time: 'true'
+
+  test-status-codes:
+    name: Test Status Code Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Test status code checking
+        uses: ./
+        with:
+          workflow-path: 'test/status-check.yml'
+          verbose: 'true'
+
+  test-probe-versions:
+    name: Test Different Probe Versions
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        probe-version: ['latest', 'v0.20.1']
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Test with probe ${{ matrix.probe-version }}
+        uses: ./
+        with:
+          workflow-path: 'test/basic-http.yml'
+          probe-version: ${{ matrix.probe-version }}
+
+  test-platforms:
+    name: Test Cross-Platform
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Test on ${{ matrix.os }}
+        uses: ./
+        with:
+          workflow-path: 'test/basic-http.yml'
+          verbose: 'true'

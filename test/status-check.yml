@@ -1,0 +1,23 @@
+name: Status Check Test
+description: Test multiple HTTP status codes
+
+jobs:
+  - name: Status Tests
+    steps:
+      - name: Test 200 OK
+        uses: http
+        with:
+          get: https://httpbin.org/status/200
+        test: "res.code == 200"
+      
+      - name: Test 404 Not Found
+        uses: http
+        with:
+          get: https://httpbin.org/status/404
+        test: "res.code == 404"
+      
+      - name: Test 500 Server Error
+        uses: http
+        with:
+          get: https://httpbin.org/status/500
+        test: "res.code == 500"
