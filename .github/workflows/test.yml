@@ -21,7 +21,7 @@ jobs:
         uses: ./
         with:
           path: test/basic-http.yml
-          verbose: true
+          options: '--verbose'
 
       - name: Test with action debug
         uses: ./
@@ -39,7 +39,7 @@ jobs:
         uses: ./
         with:
           path: test/status-check.yml
-          verbose: true
+          options: '--verbose'
 
   test-probe-versions:
     name: Test Different Probe Versions
@@ -69,7 +69,7 @@ jobs:
         uses: ./
         with:
           path: test/basic-http.yml
-          verbose: true
+          options: '--verbose'
 
   test-marketplace:
     name: Test Marketplace

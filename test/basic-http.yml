@@ -7,5 +7,5 @@ jobs:
       - name: Test HTTP GET
         uses: http
         with:
-          get: https://httpbin.org/get
+          get: https://www.google.com
         test: "res.code == 200"

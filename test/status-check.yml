@@ -7,17 +7,17 @@ jobs:
       - name: Test 200 OK
         uses: http
         with:
-          get: https://httpbin.org/status/200
+          get: https://www.google.com
         test: "res.code == 200"
       
       - name: Test 404 Not Found
         uses: http
         with:
-          get: https://httpbin.org/status/404
+          get: https://www.google.com/nonexistent-page-12345
         test: "res.code == 404"
       
-      - name: Test 500 Server Error
+      - name: Test GitHub API
         uses: http
         with:
-          get: https://httpbin.org/status/500
-        test: "res.code == 500"
+          get: https://api.github.com
+        test: "res.code == 200"
