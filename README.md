@@ -30,6 +30,24 @@ jobs:
         uses: linyows/probe-action@main
         with:
           path: 'tests/api-test.yml'
+          
+      # Multiple paths example
+      - name: Run multiple probe tests
+        uses: linyows/probe-action@main
+        with:
+          paths: |
+            - 'tests/api-test.yml'
+            - 'tests/db-test.yml'
+            - 'tests/integration-test.yml'
+          options: '--verbose --rt'
+          
+      # Working directory example
+      - name: Run probe from specific directory
+        uses: linyows/probe-action@main
+        with:
+          path: 'workflow.yml'
+          workdir: './tests'
+          options: '--verbose'
 ```
 
 Inputs
@@ -37,11 +55,14 @@ Inputs
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `path` | Path to the probe workflow YAML file | Yes | - |
-| `version` | Version of probe to use | - | `latest` |
-| `verbose` | Enable verbose output (true/false/yes/1) | - | `false` |
-| `response-time` | Show response times (true/false/yes/1) | - | `false` |
-| `action-debug` | Enable action debug output (true/false/yes/1) | - | `false` |
+| `path` | Path to the probe workflow YAML file | No* | - |
+| `paths` | Array of paths to the workflow YAML files | No* | - |
+| `version` | Version of probe to use | No | `latest` |
+| `options` | Command line options for probe (e.g., "--verbose --rt") | No | `` |
+| `workdir` | Working directory to change to before running probe | No | `` |
+| `action-debug` | Enable action debug output (true/false/yes/1) | No | `false` |
+
+*Either `path` or `paths` must be provided.
 
 Sample Probe Workflow
 --
@@ -104,7 +125,7 @@ Enable verbose output and response times for detailed information:
 - uses: linyows/probe-action@main
   with:
     path: 'tests/debug-test.yml'
-    verbose: 'true'
+    options: '--verbose --rt'
     action-debug: 'true'  # Shows action internal debug information
 ```
 
