@@ -77,7 +77,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Test with marketplace action
+      - name: Test single workflow
         uses: linyows/probe-action@main
         with:
           path: test/basic-http.yml
+
+      - name: Test multiple workflows
+        uses: linyows/probe-action@main
+        with:
+          paths:
+            - basic-http.yml
+            - status-check.yml
+          workdir: ./test
