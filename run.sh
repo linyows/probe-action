@@ -142,14 +142,29 @@ fi
 
 # Process paths - handle both array format and single path
 declare -a PATH_ARRAY
+
+if [ "$ACTION_DEBUG" = "true" ]; then
+  echo "Debug: PATHS_INPUT raw value: '$PATHS_INPUT'"
+  echo "Debug: PATHS_INPUT length: ${#PATHS_INPUT}"
+fi
+
+# GitHub Actions passes array inputs as newline-separated strings
+# Handle different input formats: single path, newline-separated, or JSON array
 if [[ "$PATHS_INPUT" =~ ^\[.*\]$ ]]; then
-  # Remove brackets and split by comma
+  # JSON array format: ["path1", "path2"]
   PATHS_CLEAN="${PATHS_INPUT#[}"
   PATHS_CLEAN="${PATHS_CLEAN%]}"
   IFS=',' read -ra PATH_ARRAY <<< "$PATHS_CLEAN"
 else
   # Single path or newline/comma separated
-  IFS=$'\n,' read -ra PATH_ARRAY <<< "$PATHS_INPUT"
+  IFS=$'\n' read -ra PATH_ARRAY <<< "$PATHS_INPUT"
+fi
+
+if [ "$ACTION_DEBUG" = "true" ]; then
+  echo "Debug: PATH_ARRAY contains ${#PATH_ARRAY[@]} elements"
+  for i in "${!PATH_ARRAY[@]}"; do
+    echo "Debug: PATH_ARRAY[$i] = '${PATH_ARRAY[$i]}'"
+  done
 fi
 
 # Run probe for each path

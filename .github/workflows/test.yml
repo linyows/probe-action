@@ -89,3 +89,4 @@ jobs:
             - basic-http.yml
             - status-check.yml
           workdir: ./test
+          action-debug: true
