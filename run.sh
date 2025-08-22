@@ -149,9 +149,18 @@ if [ "$ACTION_DEBUG" = "true" ]; then
 fi
 
 # GitHub Actions with multiline strings: handle newline-separated paths
-if [[ "$PATHS_INPUT" =~ $'\n' ]]; then
-  # Multiline string: split by newlines
-  IFS=$'\n' read -ra PATH_ARRAY <<< "$PATHS_INPUT"
+# Use mapfile/readarray to properly handle multiline input
+if [[ "$PATHS_INPUT" == *$'\n'* ]]; then
+  # Multiline string: split by newlines using mapfile
+  mapfile -t PATH_ARRAY <<< "$PATHS_INPUT"
+  # Remove empty entries from array
+  for i in "${!PATH_ARRAY[@]}"; do
+    if [[ -z "${PATH_ARRAY[i]// }" ]]; then
+      unset 'PATH_ARRAY[i]'
+    fi
+  done
+  # Reindex array to remove gaps
+  PATH_ARRAY=("${PATH_ARRAY[@]}")
 else
   # Single path
   PATH_ARRAY=("$PATHS_INPUT")
