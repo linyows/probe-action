@@ -34,8 +34,8 @@ runs:
         # Determine paths to process
         PATHS=""
         if [ -n "${{ inputs.paths }}" ]; then
-          # Convert paths input to JSON for consistent processing
-          PATHS='${{ toJSON(inputs.paths) }}'
+          # GitHub Actions passes multiline strings as-is
+          PATHS="${{ inputs.paths }}"
         elif [ -n "${{ inputs.path }}" ]; then
           PATHS="${{ inputs.path }}"
         else

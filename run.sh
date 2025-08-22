@@ -148,22 +148,9 @@ if [ "$ACTION_DEBUG" = "true" ]; then
   echo "Debug: PATHS_INPUT length: ${#PATHS_INPUT}"
 fi
 
-# Handle different input formats: single path, newline-separated, or JSON array
-if [[ "$PATHS_INPUT" =~ ^\[.*\]$ ]]; then
-  # JSON array format: ["path1", "path2", "path3"]
-  # Use jq to parse JSON array if available, otherwise fallback to basic parsing
-  if command -v jq >/dev/null 2>&1; then
-    readarray -t PATH_ARRAY < <(echo "$PATHS_INPUT" | jq -r '.[]')
-  else
-    # Fallback: simple JSON array parsing
-    PATHS_CLEAN="${PATHS_INPUT#[}"
-    PATHS_CLEAN="${PATHS_CLEAN%]}"
-    # Remove quotes and split by comma
-    PATHS_CLEAN=$(echo "$PATHS_CLEAN" | sed 's/"//g')
-    IFS=',' read -ra PATH_ARRAY <<< "$PATHS_CLEAN"
-  fi
-elif [[ "$PATHS_INPUT" =~ $'\n' ]]; then
-  # Newline-separated paths
+# GitHub Actions with multiline strings: handle newline-separated paths
+if [[ "$PATHS_INPUT" =~ $'\n' ]]; then
+  # Multiline string: split by newlines
   IFS=$'\n' read -ra PATH_ARRAY <<< "$PATHS_INPUT"
 else
   # Single path
