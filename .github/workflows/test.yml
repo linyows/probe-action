@@ -83,7 +83,7 @@ jobs:
           path: test/basic-http.yml
 
       - name: Test multiple workflows
-        uses: ./
+        uses: linyows/probe-action@main
         with:
           paths: |
             test/basic-http.yml
