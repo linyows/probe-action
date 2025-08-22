@@ -36,9 +36,9 @@ jobs:
         uses: linyows/probe-action@main
         with:
           paths: |
-            - 'tests/api-test.yml'
-            - 'tests/db-test.yml'
-            - 'tests/integration-test.yml'
+            tests/api-test.yml
+            tests/db-test.yml
+            tests/integration-test.yml
           options: '--verbose --rt'
           
       # Working directory example
