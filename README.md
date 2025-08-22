@@ -31,14 +31,21 @@ jobs:
         with:
           path: 'tests/api-test.yml'
           
-      # Multiple paths example
+      # Multiple paths example (YAML array style)
       - name: Run multiple probe tests
         uses: linyows/probe-action@main
         with:
-          paths: |
-            tests/api-test.yml
-            tests/db-test.yml
-            tests/integration-test.yml
+          paths:
+            - tests/api-test.yml
+            - tests/db-test.yml
+            - tests/integration-test.yml
+          options: '--verbose --rt'
+          
+      # Multiple paths example (bracket style)
+      - name: Run multiple probe tests (compact)
+        uses: linyows/probe-action@main
+        with:
+          paths: [tests/api-test.yml, tests/db-test.yml]
           options: '--verbose --rt'
           
       # Working directory example
@@ -56,7 +63,7 @@ Inputs
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `path` | Path to the probe workflow YAML file | No* | - |
-| `paths` | Array of paths to the workflow YAML files | No* | - |
+| `paths` | Array of paths to the workflow YAML files (supports both `[a.yml, b.yml]` and `- a.yml` formats) | No* | - |
 | `version` | Version of probe to use | No | `latest` |
 | `options` | Command line options for probe (e.g., "--verbose --rt") | No | `` |
 | `workdir` | Working directory to change to before running probe | No | `` |

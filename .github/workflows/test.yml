@@ -82,11 +82,18 @@ jobs:
         with:
           path: test/basic-http.yml
 
-      - name: Test multiple workflows
+      - name: Test multiple workflows (YAML array style)
         uses: linyows/probe-action@main
         with:
-          paths: |
-            basic-http.yml
-            status-check.yml
+          paths:
+            - basic-http.yml
+            - status-check.yml
+          workdir: ./test
+          action-debug: true
+          
+      - name: Test multiple workflows (bracket style)
+        uses: linyows/probe-action@main
+        with:
+          paths: [basic-http.yml, status-check.yml]
           workdir: ./test
           action-debug: true
