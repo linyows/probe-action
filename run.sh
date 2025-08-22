@@ -206,4 +206,9 @@ for path in "${PATH_ARRAY[@]}"; do
   fi
 
   FORCE_COLOR=1 "$ORIGINAL_DIR/probe" $PROBE_ARGS "$path"
+  
+  # Add blank line between multiple workflow executions for clarity
+  if [ ${#PATH_ARRAY[@]} -gt 1 ]; then
+    echo ""
+  fi
 done
