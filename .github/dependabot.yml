@@ -4,11 +4,11 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    registries:
-      - ghcr
-registries:
-  ghcr:
-    type: docker-registry
-    url: ghcr.io
-    username: ${{secrets.USERNAME}}
-    password: ${{secrets.PASSWORD}}
+      time: "05:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "dependabot"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
