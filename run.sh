@@ -112,13 +112,35 @@ if [ ! -f probe.tar.gz ]; then
   exit 1
 fi
 
+# Check file size (should be greater than 0)
+FILESIZE=$(stat -c%s probe.tar.gz 2>/dev/null || stat -f%z probe.tar.gz 2>/dev/null || echo "0")
+if [ "$FILESIZE" -eq 0 ]; then
+  echo "Error: Downloaded file is empty (0 bytes)"
+  echo "URL: $DOWNLOAD_URL"
+  exit 1
+fi
+
 if [ "$ACTION_DEBUG" = "true" ]; then
-  echo "Download successful, extracting..."
+  echo "Download successful (${FILESIZE} bytes), extracting..."
+fi
+
+# Verify tar archive integrity before extraction
+if ! tar -tzf probe.tar.gz >/dev/null 2>&1; then
+  echo "Error: probe.tar.gz appears to be corrupted or invalid"
+  echo "File size: ${FILESIZE} bytes"
+  echo "URL: $DOWNLOAD_URL"
+  if [ "$ACTION_DEBUG" = "true" ]; then
+    echo "Archive test output:"
+    tar -tzf probe.tar.gz 2>&1 || true
+  fi
+  exit 1
 fi
 
 # Extract binary
 if ! tar -xzf probe.tar.gz; then
   echo "Error: Failed to extract probe.tar.gz"
+  echo "File size: ${FILESIZE} bytes"
+  echo "URL: $DOWNLOAD_URL"
   exit 1
 fi
 
@@ -126,7 +148,9 @@ fi
 if [ ! -f probe ]; then
   echo "Error: probe binary not found after extraction"
   echo "Archive contents:"
-  tar -tzf probe.tar.gz || echo "Failed to list archive contents"
+  tar -tzf probe.tar.gz 2>&1 || echo "Failed to list archive contents"
+  echo "Current directory contents after extraction:"
+  ls -la
   exit 1
 fi
 
