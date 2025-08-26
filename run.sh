@@ -66,13 +66,20 @@ if [ "$VERSION" = "latest" ]; then
     echo "Fetching latest version from GitHub API..."
   fi
 
+  # Set curl options based on debug mode
+  if [ "$ACTION_DEBUG" = "true" ]; then
+    CURL_OPTIONS=""
+  else
+    CURL_OPTIONS="-s"
+  fi
+
   # Try to get latest version from GitHub API with authentication
   if [ -n "${GITHUB_TOKEN:-}" ]; then
-    VERSION=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+    VERSION=$(curl $CURL_OPTIONS -H "Authorization: token $GITHUB_TOKEN" \
       https://api.github.com/repos/linyows/probe/releases/latest | \
       grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r')
   else
-    VERSION=$(curl -s https://api.github.com/repos/linyows/probe/releases/latest | \
+    VERSION=$(curl $CURL_OPTIONS https://api.github.com/repos/linyows/probe/releases/latest | \
       grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r')
   fi
 
