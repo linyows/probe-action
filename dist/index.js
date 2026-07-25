@@ -41205,7 +41205,7 @@ async function run() {
     const platform = (0, run_1.detectPlatform)();
     if (debug)
         core.info(`Detected platform: ${platform.os}_${platform.arch}`);
-    const version = (0, resolve_version_1.sanitizeVersion)(await (0, resolve_version_1.resolveVersion)(versionInput, { token, debug }));
+    const version = (0, resolve_version_1.normalizeVersionTag)((0, resolve_version_1.sanitizeVersion)(await (0, resolve_version_1.resolveVersion)(versionInput, { token, debug })));
     if (debug)
         core.info(`Using probe version: ${version}`);
     // The binary lives in a stable directory under RUNNER_TEMP so it can be
@@ -41313,6 +41313,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.FALLBACK_VERSION = void 0;
 exports.normalizeBool = normalizeBool;
 exports.sanitizeVersion = sanitizeVersion;
+exports.normalizeVersionTag = normalizeVersionTag;
 exports.resolveVersion = resolveVersion;
 const core = __importStar(__nccwpck_require__(37484));
 // Fallback used when "latest" cannot be resolved from the GitHub API
@@ -41327,6 +41328,11 @@ function normalizeBool(value) {
 // corrupt the cache key or the download URL built from the version.
 function sanitizeVersion(value) {
     return value.split('\n')[0].replace(/\r/g, '').trim();
+}
+// probe releases are tagged as vX.Y.Z. Prefix a leading "v" when a bare semver
+// value is given (e.g. "0.20.1") so the download URL points at a real tag.
+function normalizeVersionTag(value) {
+    return /^\d+\.\d+\.\d+/.test(value) ? `v${value}` : value;
 }
 // Resolve a probe version to a concrete release tag.
 // "latest" is resolved via the GitHub API; a concrete tag is returned as-is.
@@ -41475,6 +41481,9 @@ async function ensureProbeBinary(opts) {
         if (debug) {
             core.info(`Existing probe version '${existing ?? 'unknown'}' does not match '${version}', re-downloading`);
         }
+        // Remove the stale binary so the post-extract existence check below is
+        // meaningful even if the archive layout changes and does not contain it.
+        fs.rmSync(binary, { force: true });
     }
     const url = `https://github.com/linyows/probe/releases/download/${version}/probe_${platform.os}_${platform.arch}.tar.gz`;
     if (debug)
@@ -41504,7 +41513,8 @@ async function ensureProbeBinary(opts) {
 function parsePaths(pathInput, pathsInput) {
     const raw = pathsInput.trim().length > 0 ? pathsInput : pathInput;
     return raw
-        .split('\n')
+        // Split on \r?\n so Windows-style line endings do not leave a trailing \r.
+        .split(/\r?\n/)
         .map((p) => p.trim().replace(/^"|"$/g, '').trim())
         .filter((p) => p.length > 0);
 }

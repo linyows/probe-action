@@ -16,6 +16,12 @@ export function sanitizeVersion(value: string): string {
   return value.split('\n')[0].replace(/\r/g, '').trim()
 }
 
+// probe releases are tagged as vX.Y.Z. Prefix a leading "v" when a bare semver
+// value is given (e.g. "0.20.1") so the download URL points at a real tag.
+export function normalizeVersionTag(value: string): string {
+  return /^\d+\.\d+\.\d+/.test(value) ? `v${value}` : value
+}
+
 export interface ResolveOptions {
   token?: string
   debug?: boolean

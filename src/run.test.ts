@@ -36,6 +36,10 @@ describe('parsePaths', () => {
     expect(parsePaths('"quoted.yml"', '')).toEqual(['quoted.yml'])
   })
 
+  it('handles Windows-style CRLF line endings', () => {
+    expect(parsePaths('', 'a.yml\r\nb.yml\r\n')).toEqual(['a.yml', 'b.yml'])
+  })
+
   it('returns an empty array when nothing is provided', () => {
     expect(parsePaths('', '')).toEqual([])
     expect(parsePaths('   ', '  ')).toEqual([])

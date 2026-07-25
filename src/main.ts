@@ -4,7 +4,12 @@ import * as fs from 'node:fs'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as cache from '@actions/cache'
-import { resolveVersion, sanitizeVersion, normalizeBool } from './resolve-version'
+import {
+  resolveVersion,
+  sanitizeVersion,
+  normalizeVersionTag,
+  normalizeBool,
+} from './resolve-version'
 import { detectPlatform, ensureProbeBinary, parsePaths } from './run'
 
 export async function run(): Promise<void> {
@@ -26,8 +31,8 @@ export async function run(): Promise<void> {
   const platform = detectPlatform()
   if (debug) core.info(`Detected platform: ${platform.os}_${platform.arch}`)
 
-  const version = sanitizeVersion(
-    await resolveVersion(versionInput, { token, debug }),
+  const version = normalizeVersionTag(
+    sanitizeVersion(await resolveVersion(versionInput, { token, debug })),
   )
   if (debug) core.info(`Using probe version: ${version}`)
 

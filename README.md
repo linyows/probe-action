@@ -58,7 +58,7 @@ Inputs
 |-------|-------------|----------|---------|
 | `path` | Path to the probe workflow YAML file | No* | - |
 | `paths` | Multiple paths to workflow YAML files (newline-separated multiline string) | No* | - |
-| `version` | Version of probe to use | No | `latest` |
+| `version` | Version of probe to use (a release tag such as `v0.20.1`, or `latest`; a bare `0.20.1` is normalized to `v0.20.1`) | No | `latest` |
 | `options` | Command line options for probe (e.g., "--verbose --rt") | No | `` |
 | `workdir` | Working directory to change to before running probe | No | `` |
 | `action-debug` | Enable action debug output (true/false/yes/1) | No | `false` |

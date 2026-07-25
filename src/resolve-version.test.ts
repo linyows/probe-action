@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import {
   resolveVersion,
   sanitizeVersion,
+  normalizeVersionTag,
   normalizeBool,
   FALLBACK_VERSION,
 } from './resolve-version'
@@ -24,6 +25,21 @@ describe('sanitizeVersion', () => {
   it('keeps only the first line and strips CR', () => {
     expect(sanitizeVersion('v1.2.3\r\nextra')).toBe('v1.2.3')
     expect(sanitizeVersion('  v1.2.3  ')).toBe('v1.2.3')
+  })
+})
+
+describe('normalizeVersionTag', () => {
+  it('prefixes a leading v to bare semver', () => {
+    expect(normalizeVersionTag('0.20.1')).toBe('v0.20.1')
+  })
+
+  it('leaves an existing v-prefixed tag unchanged', () => {
+    expect(normalizeVersionTag('v0.20.1')).toBe('v0.20.1')
+  })
+
+  it('leaves non-semver values unchanged', () => {
+    expect(normalizeVersionTag('latest')).toBe('latest')
+    expect(normalizeVersionTag('main')).toBe('main')
   })
 })
 

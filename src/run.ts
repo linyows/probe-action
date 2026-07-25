@@ -87,6 +87,9 @@ export async function ensureProbeBinary(opts: EnsureOptions): Promise<string> {
         `Existing probe version '${existing ?? 'unknown'}' does not match '${version}', re-downloading`,
       )
     }
+    // Remove the stale binary so the post-extract existence check below is
+    // meaningful even if the archive layout changes and does not contain it.
+    fs.rmSync(binary, { force: true })
   }
 
   const url = `https://github.com/linyows/probe/releases/download/${version}/probe_${platform.os}_${platform.arch}.tar.gz`
@@ -122,7 +125,8 @@ export async function ensureProbeBinary(opts: EnsureOptions): Promise<string> {
 export function parsePaths(pathInput: string, pathsInput: string): string[] {
   const raw = pathsInput.trim().length > 0 ? pathsInput : pathInput
   return raw
-    .split('\n')
+    // Split on \r?\n so Windows-style line endings do not leave a trailing \r.
+    .split(/\r?\n/)
     .map((p) => p.trim().replace(/^"|"$/g, '').trim())
     .filter((p) => p.length > 0)
 }
