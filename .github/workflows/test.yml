@@ -84,60 +84,37 @@ jobs:
           path: test/basic-http.yml
           options: '--verbose'
 
-  test-caching:
-    name: Test Version Resolution and Binary Caching
+  build:
+    name: Lint, Test, and Verify Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
-      - name: resolve-version.sh returns a concrete tag unchanged
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify dist/ is up to date
         run: |
-          out=$(bash resolve-version.sh v0.20.1 false)
-          echo "resolved: $out"
-          [ "$out" = "v0.20.1" ] || { echo "FAIL: expected v0.20.1, got '$out'"; exit 1; }
-        shell: bash
-
-      - name: resolve-version.sh resolves 'latest' to a versioned tag
-        run: |
-          out=$(bash resolve-version.sh latest false)
-          echo "resolved latest: $out"
-          echo "$out" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+' || { echo "FAIL: unexpected '$out'"; exit 1; }
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        shell: bash
-
-      - name: Binary is downloaded once, then re-download is skipped
-        run: |
-          export PROBE_CACHE_DIR="$RUNNER_TEMP/probe-cache-test"
-
-          # First run should download the binary. Capture output and the exit
-          # code so a genuine failure fails the test instead of being masked.
-          set +e
-          out1=$(bash run.sh test/basic-http.yml v0.20.1 "" "" true 2>&1)
-          rc1=$?
-          set -e
-          echo "$out1"
-          [ "$rc1" -eq 0 ] || { echo "FAIL: first run exited $rc1"; exit 1; }
-          echo "$out1" | grep -q "Downloading from" \
-            || { echo "FAIL: expected a download on the first run"; exit 1; }
-
-          # Second run should reuse the cached binary
-          set +e
-          out2=$(bash run.sh test/basic-http.yml v0.20.1 "" "" true 2>&1)
-          rc2=$?
-          set -e
-          echo "$out2"
-          [ "$rc2" -eq 0 ] || { echo "FAIL: second run exited $rc2"; exit 1; }
-          echo "$out2" | grep -q "skipping download" \
-            || { echo "FAIL: expected the second run to skip the download"; exit 1; }
-
-          # Only the binary should remain in the cache dir (no archive)
-          [ ! -f "$PROBE_CACHE_DIR/probe.tar.gz" ] \
-            || { echo "FAIL: probe.tar.gz should have been removed"; exit 1; }
-          echo "PASS"
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        shell: bash
+          if [ -n "$(git status --porcelain dist)" ]; then
+            echo "FAIL: dist/ is out of date. Run 'npm run build' and commit the result."
+            git --no-pager diff --stat dist
+            exit 1
+          fi
+          echo "dist/ is up to date"
 
   test-marketplace:
     name: Test Marketplace

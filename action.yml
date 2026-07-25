@@ -29,52 +29,14 @@ inputs:
     description: 'Cache the probe binary across runs via actions/cache (set to false to disable)'
     required: false
     default: 'true'
+  github-token:
+    description: 'Token used for GitHub API calls (resolving the latest version) to avoid rate limiting'
+    required: false
+    default: ${{ github.token }}
 
 runs:
-  using: 'composite'
-  steps:
-    - name: Resolve probe version
-      id: resolve
-      run: |
-        VERSION=$(bash "${{ github.action_path }}/resolve-version.sh" "${{ inputs.version }}" "${{ inputs.action-debug }}")
-        # Keep only the first line and strip CR so a stray newline in the input
-        # cannot inject extra step outputs or corrupt the cache key / URL.
-        VERSION=$(printf '%s' "$VERSION" | head -n1 | tr -d '\r')
-        printf 'version=%s\n' "$VERSION" >> "$GITHUB_OUTPUT"
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-
-    - name: Cache probe binary
-      if: ${{ inputs.cache != 'false' }}
-      uses: actions/cache@v6
-      with:
-        path: ${{ runner.temp }}/probe-cache
-        key: probe-${{ runner.os }}-${{ runner.arch }}-${{ steps.resolve.outputs.version }}
-
-    - name: Download and run probe
-      run: |
-        # Determine paths to process
-        PATHS=""
-        if [ -n "${{ inputs.paths }}" ]; then
-          # GitHub Actions passes multiline strings as-is
-          PATHS="${{ inputs.paths }}"
-        elif [ -n "${{ inputs.path }}" ]; then
-          PATHS="${{ inputs.path }}"
-        else
-          echo "Error: Either 'path' or 'paths' input must be provided"
-          exit 1
-        fi
-
-        # Run the external script with the resolved version. When caching is
-        # enabled, PROBE_CACHE_DIR points at the actions/cache path above so the
-        # binary is restored/saved; when disabled it is empty and run.sh falls
-        # back to a non-persistent directory.
-        bash "${{ github.action_path }}/run.sh" "$PATHS" "${{ steps.resolve.outputs.version }}" "${{ inputs.options }}" "${{ inputs.workdir }}" "${{ inputs.action-debug }}"
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-        PROBE_CACHE_DIR: ${{ inputs.cache != 'false' && format('{0}/probe-cache', runner.temp) || '' }}
+  using: 'node24'
+  main: 'dist/index.js'
 
 branding:
   icon: 'activity'

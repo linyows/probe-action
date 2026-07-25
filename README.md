@@ -63,6 +63,7 @@ Inputs
 | `workdir` | Working directory to change to before running probe | No | `` |
 | `action-debug` | Enable action debug output (true/false/yes/1) | No | `false` |
 | `cache` | Cache the probe binary across runs via `actions/cache` (set to `false` to disable) | No | `true` |
+| `github-token` | Token used for GitHub API calls (resolving the latest version) to avoid rate limiting | No | `${{ github.token }}` |
 
 *Either `path` or `paths` must be provided.
 
