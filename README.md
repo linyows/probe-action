@@ -8,6 +8,7 @@ Features
 
 - **Easy Integration**: Simple setup with your existing GitHub workflows
 - **Automatic Download**: Automatically downloads and sets up the probe binary
+- **Binary Caching**: Caches the probe binary via `actions/cache` (keyed by resolved version, OS, and arch) to skip re-downloads on subsequent runs
 - **Linux Support**: Runs on Ubuntu runners (x86_64 and ARM64)
 - **Flexible Options**: Configurable verbose output and response time display
 - **Rich Testing**: Supports HTTP, SSH, Database, Browser, Shell, SMTP, and IMAP actions
@@ -27,13 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run probe tests
-        uses: linyows/probe-action@v1
+        uses: linyows/probe-action@v1.1
         with:
           path: 'tests/api-test.yml'
 
       # Multiple paths example
       - name: Run multiple probe tests
-        uses: linyows/probe-action@v1
+        uses: linyows/probe-action@v1.1
         with:
           paths: |
             tests/api-test.yml
@@ -43,7 +44,7 @@ jobs:
 
       # Working directory example
       - name: Run probe from specific directory
-        uses: linyows/probe-action@v1
+        uses: linyows/probe-action@v1.1
         with:
           path: 'workflow.yml'
           workdir: './tests'
@@ -57,10 +58,12 @@ Inputs
 |-------|-------------|----------|---------|
 | `path` | Path to the probe workflow YAML file | No* | - |
 | `paths` | Multiple paths to workflow YAML files (newline-separated multiline string) | No* | - |
-| `version` | Version of probe to use | No | `latest` |
+| `version` | Version of probe to use (a release tag such as `v0.20.1`, or `latest`; a bare `0.20.1` is normalized to `v0.20.1`) | No | `latest` |
 | `options` | Command line options for probe (e.g., "--verbose --rt") | No | `` |
 | `workdir` | Working directory to change to before running probe | No | `` |
 | `action-debug` | Enable action debug output (true/false/yes/1) | No | `false` |
+| `cache` | Cache the probe binary across runs via `actions/cache` (set to `false` to disable) | No | `true` |
+| `github-token` | Token used for GitHub API calls (resolving the latest version) to avoid rate limiting | No | `${{ github.token }}` |
 
 *Either `path` or `paths` must be provided.
 
@@ -122,7 +125,7 @@ Debugging
 Enable verbose output and response times for detailed information:
 
 ```yaml
-- uses: linyows/probe-action@v1
+- uses: linyows/probe-action@v1.1
   with:
     path: 'tests/debug-test.yml'
     options: '--verbose --rt'

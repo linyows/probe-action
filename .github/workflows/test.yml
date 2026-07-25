@@ -10,7 +10,7 @@ jobs:
     name: Test Basic HTTP Functionality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test basic HTTP with default settings
         uses: ./
@@ -33,7 +33,7 @@ jobs:
     name: Test Status Code Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test status code checking
         uses: ./
@@ -48,13 +48,26 @@ jobs:
       matrix:
         probe-version: ['latest', 'v0.20.1']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test with probe ${{ matrix.probe-version }}
         uses: ./
         with:
           path: test/basic-http.yml
           version: ${{ matrix.probe-version }}
+
+  test-cache-disabled:
+    name: Test With Caching Disabled
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Run with cache disabled
+        uses: ./
+        with:
+          path: test/basic-http.yml
+          version: v0.20.1
+          cache: false
 
   test-platforms:
     name: Test Cross-Platform
@@ -63,7 +76,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test on ${{ matrix.os }}
         uses: ./
@@ -71,11 +84,43 @@ jobs:
           path: test/basic-http.yml
           options: '--verbose'
 
+  build:
+    name: Lint, Test, and Verify Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify dist/ is up to date
+        run: |
+          if [ -n "$(git status --porcelain dist)" ]; then
+            echo "FAIL: dist/ is out of date. Run 'npm run build' and commit the result."
+            git --no-pager diff --stat dist
+            exit 1
+          fi
+          echo "dist/ is up to date"
+
   test-marketplace:
     name: Test Marketplace
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test single workflow
         uses: linyows/probe-action@main
