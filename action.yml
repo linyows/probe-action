@@ -25,6 +25,10 @@ inputs:
     description: 'Enable action debug output (true/false/yes/1)'
     required: false
     default: 'false'
+  cache:
+    description: 'Cache the probe binary across runs via actions/cache (set to false to disable)'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -39,6 +43,7 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
 
     - name: Cache probe binary
+      if: ${{ inputs.cache != 'false' }}
       uses: actions/cache@v4
       with:
         path: ${{ runner.temp }}/probe-cache
@@ -58,13 +63,15 @@ runs:
           exit 1
         fi
 
-        # Run the external script with the resolved version and a cache dir so
-        # the probe binary can be restored/saved by actions/cache above.
+        # Run the external script with the resolved version. When caching is
+        # enabled, PROBE_CACHE_DIR points at the actions/cache path above so the
+        # binary is restored/saved; when disabled it is empty and run.sh falls
+        # back to a non-persistent directory.
         bash "${{ github.action_path }}/run.sh" "$PATHS" "${{ steps.resolve.outputs.version }}" "${{ inputs.options }}" "${{ inputs.workdir }}" "${{ inputs.action-debug }}"
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-        PROBE_CACHE_DIR: ${{ runner.temp }}/probe-cache
+        PROBE_CACHE_DIR: ${{ inputs.cache != 'false' && format('{0}/probe-cache', runner.temp) || '' }}
 
 branding:
   icon: 'activity'

@@ -62,6 +62,7 @@ Inputs
 | `options` | Command line options for probe (e.g., "--verbose --rt") | No | `` |
 | `workdir` | Working directory to change to before running probe | No | `` |
 | `action-debug` | Enable action debug output (true/false/yes/1) | No | `false` |
+| `cache` | Cache the probe binary across runs via `actions/cache` (set to `false` to disable) | No | `true` |
 
 *Either `path` or `paths` must be provided.
 

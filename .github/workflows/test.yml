@@ -56,6 +56,19 @@ jobs:
           path: test/basic-http.yml
           version: ${{ matrix.probe-version }}
 
+  test-cache-disabled:
+    name: Test With Caching Disabled
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run with cache disabled
+        uses: ./
+        with:
+          path: test/basic-http.yml
+          version: v0.20.1
+          cache: false
+
   test-platforms:
     name: Test Cross-Platform
     runs-on: ${{ matrix.os }}
