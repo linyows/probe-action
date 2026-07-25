@@ -71,6 +71,52 @@ jobs:
           path: test/basic-http.yml
           options: '--verbose'
 
+  test-caching:
+    name: Test Version Resolution and Binary Caching
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: resolve-version.sh returns a concrete tag unchanged
+        run: |
+          out=$(bash resolve-version.sh v0.20.1 false)
+          echo "resolved: $out"
+          [ "$out" = "v0.20.1" ] || { echo "FAIL: expected v0.20.1, got '$out'"; exit 1; }
+        shell: bash
+
+      - name: resolve-version.sh resolves 'latest' to a versioned tag
+        run: |
+          out=$(bash resolve-version.sh latest false)
+          echo "resolved latest: $out"
+          echo "$out" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+' || { echo "FAIL: unexpected '$out'"; exit 1; }
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+
+      - name: Binary is downloaded once, then re-download is skipped
+        run: |
+          export PROBE_CACHE_DIR="$RUNNER_TEMP/probe-cache-test"
+
+          # First run should download the binary
+          out1=$(bash run.sh test/basic-http.yml v0.20.1 "" "" true 2>&1 || true)
+          echo "$out1"
+          echo "$out1" | grep -q "Downloading from" \
+            || { echo "FAIL: expected a download on the first run"; exit 1; }
+
+          # Second run should reuse the cached binary
+          out2=$(bash run.sh test/basic-http.yml v0.20.1 "" "" true 2>&1 || true)
+          echo "$out2"
+          echo "$out2" | grep -q "skipping download" \
+            || { echo "FAIL: expected the second run to skip the download"; exit 1; }
+
+          # Only the binary should remain in the cache dir (no archive)
+          [ ! -f "$PROBE_CACHE_DIR/probe.tar.gz" ] \
+            || { echo "FAIL: probe.tar.gz should have been removed"; exit 1; }
+          echo "PASS"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+
   test-marketplace:
     name: Test Marketplace
     runs-on: ubuntu-latest
