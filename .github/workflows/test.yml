@@ -10,7 +10,7 @@ jobs:
     name: Test Basic HTTP Functionality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test basic HTTP with default settings
         uses: ./
@@ -33,7 +33,7 @@ jobs:
     name: Test Status Code Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test status code checking
         uses: ./
@@ -48,7 +48,7 @@ jobs:
       matrix:
         probe-version: ['latest', 'v0.20.1']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test with probe ${{ matrix.probe-version }}
         uses: ./
@@ -60,7 +60,7 @@ jobs:
     name: Test With Caching Disabled
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Run with cache disabled
         uses: ./
@@ -76,7 +76,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test on ${{ matrix.os }}
         uses: ./
@@ -88,7 +88,7 @@ jobs:
     name: Test Version Resolution and Binary Caching
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: resolve-version.sh returns a concrete tag unchanged
         run: |
@@ -143,7 +143,7 @@ jobs:
     name: Test Marketplace
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Test single workflow
         uses: linyows/probe-action@main
