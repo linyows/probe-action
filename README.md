@@ -28,13 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run probe tests
-        uses: linyows/probe-action@v1.1
+        uses: linyows/probe-action@v1.1.1
         with:
           path: 'tests/api-test.yml'
 
       # Multiple paths example
       - name: Run multiple probe tests
-        uses: linyows/probe-action@v1.1
+        uses: linyows/probe-action@v1.1.1
         with:
           paths: |
             tests/api-test.yml
@@ -44,7 +44,7 @@ jobs:
 
       # Working directory example
       - name: Run probe from specific directory
-        uses: linyows/probe-action@v1.1
+        uses: linyows/probe-action@v1.1.1
         with:
           path: 'workflow.yml'
           workdir: './tests'
@@ -125,7 +125,7 @@ Debugging
 Enable verbose output and response times for detailed information:
 
 ```yaml
-- uses: linyows/probe-action@v1.1
+- uses: linyows/probe-action@v1.1.1
   with:
     path: 'tests/debug-test.yml'
     options: '--verbose --rt'
