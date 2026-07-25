@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
       time: "05:00"
     open-pull-requests-limit: 10
     labels:
@@ -11,4 +11,18 @@ updates:
       - "dependabot"
     ignore:
       - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      time: "05:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "dependabot"
+    ignore:
+      # @actions/cache 6.x is ESM-only; this action is bundled to CommonJS
+      # with ncc, so major bumps break the build. Stay on the 5.x line.
+      - dependency-name: "@actions/cache"
         update-types: ["version-update:semver-major"]
