@@ -37,7 +37,10 @@ runs:
       id: resolve
       run: |
         VERSION=$(bash "${{ github.action_path }}/resolve-version.sh" "${{ inputs.version }}" "${{ inputs.action-debug }}")
-        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        # Keep only the first line and strip CR so a stray newline in the input
+        # cannot inject extra step outputs or corrupt the cache key / URL.
+        VERSION=$(printf '%s' "$VERSION" | head -n1 | tr -d '\r')
+        printf 'version=%s\n' "$VERSION" >> "$GITHUB_OUTPUT"
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}

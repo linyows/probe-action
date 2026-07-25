@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
+# Resolve the directory of this script before any "cd" so helper scripts can
+# be located regardless of the working directory changes made below.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Parse inputs
 PATHS_INPUT="$1"
 VERSION="$2"
@@ -61,7 +65,6 @@ if [ "$ACTION_DEBUG" = "true" ]; then
 fi
 
 # Resolve version (delegates "latest" resolution to resolve-version.sh)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION=$(bash "$SCRIPT_DIR/resolve-version.sh" "$VERSION" "$ACTION_DEBUG")
 
 if [ "$ACTION_DEBUG" = "true" ]; then
@@ -73,6 +76,9 @@ fi
 # run from there; otherwise it falls back to the original working directory.
 PROBE_DIR="${PROBE_CACHE_DIR:-$ORIGINAL_DIR}"
 mkdir -p "$PROBE_DIR"
+# Resolve to an absolute path so later "cd" changes do not break references
+# to "$PROBE_DIR/probe" when PROBE_CACHE_DIR is given as a relative path.
+PROBE_DIR="$(cd "$PROBE_DIR" && pwd)"
 cd "$PROBE_DIR"
 
 # Skip download if an existing probe binary already matches the target version
