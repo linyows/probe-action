@@ -29,6 +29,21 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Resolve probe version
+      id: resolve
+      run: |
+        VERSION=$(bash "${{ github.action_path }}/resolve-version.sh" "${{ inputs.version }}" "${{ inputs.action-debug }}")
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+
+    - name: Cache probe binary
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/probe-cache
+        key: probe-${{ runner.os }}-${{ runner.arch }}-${{ steps.resolve.outputs.version }}
+
     - name: Download and run probe
       run: |
         # Determine paths to process
@@ -42,13 +57,14 @@ runs:
           echo "Error: Either 'path' or 'paths' input must be provided"
           exit 1
         fi
-        
-        # Set GITHUB_TOKEN environment variable for the script
-        export GITHUB_TOKEN="${{ github.token }}"
-        
-        # Run the external script
-        bash "${{ github.action_path }}/run.sh" "$PATHS" "${{ inputs.version }}" "${{ inputs.options }}" "${{ inputs.workdir }}" "${{ inputs.action-debug }}"
+
+        # Run the external script with the resolved version and a cache dir so
+        # the probe binary can be restored/saved by actions/cache above.
+        bash "${{ github.action_path }}/run.sh" "$PATHS" "${{ steps.resolve.outputs.version }}" "${{ inputs.options }}" "${{ inputs.workdir }}" "${{ inputs.action-debug }}"
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        PROBE_CACHE_DIR: ${{ runner.temp }}/probe-cache
 
 branding:
   icon: 'activity'

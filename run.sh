@@ -60,115 +60,111 @@ if [ "$ACTION_DEBUG" = "true" ]; then
   echo "Detected platform: ${OS}_${ARCH}"
 fi
 
-# Set version
-if [ "$VERSION" = "latest" ]; then
-  if [ "$ACTION_DEBUG" = "true" ]; then
-    echo "Fetching latest version from GitHub API..."
-  fi
-
-  # Set curl options based on debug mode
-  if [ "$ACTION_DEBUG" = "true" ]; then
-    CURL_OPTIONS=""
-  else
-    CURL_OPTIONS="-s"
-  fi
-
-  # Try to get latest version from GitHub API with authentication
-  if [ -n "${GITHUB_TOKEN:-}" ]; then
-    VERSION=$(curl $CURL_OPTIONS -H "Authorization: token $GITHUB_TOKEN" \
-      https://api.github.com/repos/linyows/probe/releases/latest | \
-      grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r')
-  else
-    VERSION=$(curl $CURL_OPTIONS https://api.github.com/repos/linyows/probe/releases/latest | \
-      grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r')
-  fi
-
-  # Fallback to known version if API fails
-  if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-    if [ "$ACTION_DEBUG" = "true" ]; then
-      echo "Failed to fetch from API, using fallback version v0.20.1"
-    fi
-    VERSION="v0.20.1"
-  elif [ "$ACTION_DEBUG" = "true" ]; then
-    echo "Successfully fetched version: $VERSION"
-  fi
-fi
+# Resolve version (delegates "latest" resolution to resolve-version.sh)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION=$(bash "$SCRIPT_DIR/resolve-version.sh" "$VERSION" "$ACTION_DEBUG")
 
 if [ "$ACTION_DEBUG" = "true" ]; then
   echo "Using probe version: $VERSION"
 fi
 
-# Download probe to original directory to avoid conflicts
-cd "$ORIGINAL_DIR"
+# Directory holding the probe binary. When PROBE_CACHE_DIR is set (e.g. by the
+# GitHub Action so it can be cached via actions/cache), the binary is stored and
+# run from there; otherwise it falls back to the original working directory.
+PROBE_DIR="${PROBE_CACHE_DIR:-$ORIGINAL_DIR}"
+mkdir -p "$PROBE_DIR"
+cd "$PROBE_DIR"
 
-# Download probe
-DOWNLOAD_URL="https://github.com/linyows/probe/releases/download/${VERSION}/probe_${OS}_${ARCH}.tar.gz"
-if [ "$ACTION_DEBUG" = "true" ]; then
-  echo "Downloading from: $DOWNLOAD_URL"
-fi
-
-if ! curl -L -f -s -S -o probe.tar.gz "$DOWNLOAD_URL"; then
-  echo "Error: Failed to download probe from $DOWNLOAD_URL"
-  echo "Please check if the version exists and supports your platform"
-  exit 1
-fi
-
-# Verify download
-if [ ! -f probe.tar.gz ]; then
-  echo "Error: probe.tar.gz not found after download"
-  exit 1
-fi
-
-# Check file size (should be greater than 0)
-FILESIZE=$(stat -c%s probe.tar.gz 2>/dev/null || stat -f%z probe.tar.gz 2>/dev/null || echo "0")
-if [ "$FILESIZE" -eq 0 ]; then
-  echo "Error: Downloaded file is empty (0 bytes)"
-  echo "URL: $DOWNLOAD_URL"
-  exit 1
-fi
-
-if [ "$ACTION_DEBUG" = "true" ]; then
-  echo "Download successful (${FILESIZE} bytes), extracting..."
-fi
-
-# Verify tar archive integrity before extraction
-if ! tar -tzf probe.tar.gz >/dev/null 2>&1; then
-  echo "Error: probe.tar.gz appears to be corrupted or invalid"
-  echo "File size: ${FILESIZE} bytes"
-  echo "URL: $DOWNLOAD_URL"
-  if [ "$ACTION_DEBUG" = "true" ]; then
-    echo "Archive test output:"
-    tar -tzf probe.tar.gz 2>&1 || true
+# Skip download if an existing probe binary already matches the target version
+SKIP_DOWNLOAD=false
+if [ -x "$PROBE_DIR/probe" ]; then
+  EXISTING_VERSION=$("$PROBE_DIR/probe" --version 2>/dev/null | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)
+  if [ -n "$EXISTING_VERSION" ] && [ "${EXISTING_VERSION#v}" = "${VERSION#v}" ]; then
+    SKIP_DOWNLOAD=true
+    if [ "$ACTION_DEBUG" = "true" ]; then
+      echo "Existing probe binary matches version $VERSION, skipping download"
+    fi
+  elif [ "$ACTION_DEBUG" = "true" ]; then
+    echo "Existing probe version '${EXISTING_VERSION:-unknown}' does not match '$VERSION', re-downloading"
   fi
-  exit 1
 fi
 
-# Extract binary
-if ! tar -xzf probe.tar.gz; then
-  echo "Error: Failed to extract probe.tar.gz"
-  echo "File size: ${FILESIZE} bytes"
-  echo "URL: $DOWNLOAD_URL"
-  exit 1
+if [ "$SKIP_DOWNLOAD" != "true" ]; then
+  # Download probe
+  DOWNLOAD_URL="https://github.com/linyows/probe/releases/download/${VERSION}/probe_${OS}_${ARCH}.tar.gz"
+  if [ "$ACTION_DEBUG" = "true" ]; then
+    echo "Downloading from: $DOWNLOAD_URL"
+  fi
+
+  if ! curl -L -f -s -S -o probe.tar.gz "$DOWNLOAD_URL"; then
+    echo "Error: Failed to download probe from $DOWNLOAD_URL"
+    echo "Please check if the version exists and supports your platform"
+    exit 1
+  fi
+
+  # Verify download
+  if [ ! -f probe.tar.gz ]; then
+    echo "Error: probe.tar.gz not found after download"
+    exit 1
+  fi
+
+  # Check file size (should be greater than 0)
+  FILESIZE=$(stat -c%s probe.tar.gz 2>/dev/null || stat -f%z probe.tar.gz 2>/dev/null || echo "0")
+  if [ "$FILESIZE" -eq 0 ]; then
+    echo "Error: Downloaded file is empty (0 bytes)"
+    echo "URL: $DOWNLOAD_URL"
+    exit 1
+  fi
+
+  if [ "$ACTION_DEBUG" = "true" ]; then
+    echo "Download successful (${FILESIZE} bytes), extracting..."
+  fi
+
+  # Verify tar archive integrity before extraction
+  if ! tar -tzf probe.tar.gz >/dev/null 2>&1; then
+    echo "Error: probe.tar.gz appears to be corrupted or invalid"
+    echo "File size: ${FILESIZE} bytes"
+    echo "URL: $DOWNLOAD_URL"
+    if [ "$ACTION_DEBUG" = "true" ]; then
+      echo "Archive test output:"
+      tar -tzf probe.tar.gz 2>&1 || true
+    fi
+    exit 1
+  fi
+
+  # Extract binary
+  if ! tar -xzf probe.tar.gz; then
+    echo "Error: Failed to extract probe.tar.gz"
+    echo "File size: ${FILESIZE} bytes"
+    echo "URL: $DOWNLOAD_URL"
+    exit 1
+  fi
+
+  # Verify extraction
+  if [ ! -f probe ]; then
+    echo "Error: probe binary not found after extraction"
+    echo "Archive contents:"
+    tar -tzf probe.tar.gz 2>&1 || echo "Failed to list archive contents"
+    echo "Current directory contents after extraction:"
+    ls -la
+    exit 1
+  fi
+
+  chmod +x probe
+
+  # Remove the archive so only the binary is kept (and cached)
+  rm -f probe.tar.gz
 fi
 
-# Verify extraction
-if [ ! -f probe ]; then
-  echo "Error: probe binary not found after extraction"
-  echo "Archive contents:"
-  tar -tzf probe.tar.gz 2>&1 || echo "Failed to list archive contents"
-  echo "Current directory contents after extraction:"
-  ls -la
-  exit 1
-fi
-
-chmod +x probe
 if [ "$ACTION_DEBUG" = "true" ]; then
-  echo "Probe binary ready: $(./probe --version 2>/dev/null || echo 'version check failed')"
+  echo "Probe binary ready: $("$PROBE_DIR/probe" --version 2>/dev/null || echo 'version check failed')"
 fi
 
-# Change back to working directory if specified
+# Change back to working directory (probe was downloaded from a different dir)
 if [ -n "$WORKDIR" ]; then
   cd "$WORKDIR"
+else
+  cd "$ORIGINAL_DIR"
 fi
 
 # Process paths - handle both array format and single path
@@ -233,10 +229,10 @@ for path in "${PATH_ARRAY[@]}"; do
   # Run probe (use absolute path to binary)
   if [ "$ACTION_DEBUG" = "true" ]; then
     echo "Running probe with workflow: $path"
-    echo "Command: FORCE_COLOR=1 $ORIGINAL_DIR/probe $PROBE_ARGS $path"
+    echo "Command: FORCE_COLOR=1 $PROBE_DIR/probe $PROBE_ARGS $path"
   fi
 
-  FORCE_COLOR=1 "$ORIGINAL_DIR/probe" $PROBE_ARGS "$path"
+  FORCE_COLOR=1 "$PROBE_DIR/probe" $PROBE_ARGS "$path"
   
   # Add blank line between multiple workflow executions for clarity
   if [ ${#PATH_ARRAY[@]} -gt 1 ]; then
