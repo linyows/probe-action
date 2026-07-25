@@ -160,11 +160,12 @@ if [ "$ACTION_DEBUG" = "true" ]; then
   echo "Probe binary ready: $("$PROBE_DIR/probe" --version 2>/dev/null || echo 'version check failed')"
 fi
 
-# Change back to working directory (probe was downloaded from a different dir)
+# Return to the original directory first (the binary may have been downloaded
+# from a different dir), then re-enter WORKDIR so a relative WORKDIR resolves
+# against the original directory rather than the cache dir.
+cd "$ORIGINAL_DIR"
 if [ -n "$WORKDIR" ]; then
   cd "$WORKDIR"
-else
-  cd "$ORIGINAL_DIR"
 fi
 
 # Process paths - handle both array format and single path

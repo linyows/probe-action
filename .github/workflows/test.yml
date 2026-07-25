@@ -97,15 +97,24 @@ jobs:
         run: |
           export PROBE_CACHE_DIR="$RUNNER_TEMP/probe-cache-test"
 
-          # First run should download the binary
-          out1=$(bash run.sh test/basic-http.yml v0.20.1 "" "" true 2>&1 || true)
+          # First run should download the binary. Capture output and the exit
+          # code so a genuine failure fails the test instead of being masked.
+          set +e
+          out1=$(bash run.sh test/basic-http.yml v0.20.1 "" "" true 2>&1)
+          rc1=$?
+          set -e
           echo "$out1"
+          [ "$rc1" -eq 0 ] || { echo "FAIL: first run exited $rc1"; exit 1; }
           echo "$out1" | grep -q "Downloading from" \
             || { echo "FAIL: expected a download on the first run"; exit 1; }
 
           # Second run should reuse the cached binary
-          out2=$(bash run.sh test/basic-http.yml v0.20.1 "" "" true 2>&1 || true)
+          set +e
+          out2=$(bash run.sh test/basic-http.yml v0.20.1 "" "" true 2>&1)
+          rc2=$?
+          set -e
           echo "$out2"
+          [ "$rc2" -eq 0 ] || { echo "FAIL: second run exited $rc2"; exit 1; }
           echo "$out2" | grep -q "skipping download" \
             || { echo "FAIL: expected the second run to skip the download"; exit 1; }
 
