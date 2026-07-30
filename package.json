@@ -19,7 +19,7 @@
     "@actions/tool-cache": "^2.0.2"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
+    "@types/node": "^26.1.2",
     "@vercel/ncc": "^0.44.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
