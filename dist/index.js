@@ -51261,11 +51261,15 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.detectPlatform = detectPlatform;
 exports.getBinaryVersion = getBinaryVersion;
+exports.parseChecksums = parseChecksums;
+exports.sha256File = sha256File;
+exports.verifyChecksum = verifyChecksum;
 exports.ensureProbeBinary = ensureProbeBinary;
 exports.parsePaths = parsePaths;
 const os = __importStar(__nccwpck_require__(48161));
 const path = __importStar(__nccwpck_require__(76760));
 const fs = __importStar(__nccwpck_require__(73024));
+const crypto = __importStar(__nccwpck_require__(77598));
 const core = __importStar(__nccwpck_require__(37484));
 const exec = __importStar(__nccwpck_require__(95236));
 const tc = __importStar(__nccwpck_require__(33472));
@@ -51305,6 +51309,38 @@ async function getBinaryVersion(binary) {
 function versionsMatch(a, b) {
     return a.replace(/^v/, '') === b.replace(/^v/, '');
 }
+// Parse a goreleaser-style checksums file ("<sha256>  <filename>" per line)
+// into a map of filename to lowercase hex digest.
+function parseChecksums(content) {
+    const sums = new Map();
+    for (const line of content.split(/\r?\n/)) {
+        const m = line.trim().match(/^([0-9a-fA-F]{64})\s+\*?(\S+)$/);
+        if (m)
+            sums.set(m[2], m[1].toLowerCase());
+    }
+    return sums;
+}
+// Compute the SHA-256 hex digest of a file.
+async function sha256File(file) {
+    const hash = crypto.createHash('sha256');
+    for await (const chunk of fs.createReadStream(file)) {
+        hash.update(chunk);
+    }
+    return hash.digest('hex');
+}
+// Verify that an archive matches the digest listed for assetName in the
+// checksums file. Throws when the entry is missing or the digest differs.
+async function verifyChecksum(archive, assetName, checksumsContent) {
+    const expected = parseChecksums(checksumsContent).get(assetName);
+    if (!expected) {
+        throw new Error(`Checksum for ${assetName} not found in checksums.txt`);
+    }
+    const actual = await sha256File(archive);
+    if (actual !== expected) {
+        throw new Error(`Checksum mismatch for ${assetName}: expected ${expected}, got ${actual}`);
+    }
+    return actual;
+}
 // Ensure a probe binary of the requested version exists in probeDir, downloading
 // and extracting it when necessary. Returns the absolute path to the binary.
 async function ensureProbeBinary(opts) {
@@ -51327,7 +51363,10 @@ async function ensureProbeBinary(opts) {
         // meaningful even if the archive layout changes and does not contain it.
         fs.rmSync(binary, { force: true });
     }
-    const url = `https://github.com/linyows/probe/releases/download/${version}/probe_${platform.os}_${platform.arch}.tar.gz`;
+    const baseUrl = `https://github.com/linyows/probe/releases/download/${version}`;
+    const assetName = `probe_${platform.os}_${platform.arch}.tar.gz`;
+    const url = `${baseUrl}/${assetName}`;
+    const checksumsUrl = `${baseUrl}/checksums.txt`;
     if (debug)
         core.info(`Downloading from: ${url}`);
     let archive;
@@ -51338,6 +51377,18 @@ async function ensureProbeBinary(opts) {
         throw new Error(`Failed to download probe from ${url}: ${String(err)}\n` +
             'Please check if the version exists and supports your platform');
     }
+    // Verify the archive against the release's checksums.txt before extracting,
+    // so a corrupted or tampered download is never executed.
+    let checksums;
+    try {
+        checksums = fs.readFileSync(await tc.downloadTool(checksumsUrl), 'utf8');
+    }
+    catch (err) {
+        throw new Error(`Failed to download checksums from ${checksumsUrl}: ${String(err)}`);
+    }
+    const digest = await verifyChecksum(archive, assetName, checksums);
+    if (debug)
+        core.info(`Checksum verified: sha256:${digest}`);
     await tc.extractTar(archive, probeDir);
     if (!fs.existsSync(binary)) {
         throw new Error(`probe binary not found after extraction in ${probeDir}`);
