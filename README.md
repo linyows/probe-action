@@ -9,7 +9,7 @@ Features
 - **Easy Integration**: Simple setup with your existing GitHub workflows
 - **Automatic Download**: Automatically downloads and sets up the probe binary
 - **Checksum Verification**: Verifies the downloaded archive against the release's `checksums.txt` (SHA-256) before extracting it
-- **Binary Caching**: Caches the probe binary via `actions/cache` (keyed by resolved version, OS, and arch) to skip re-downloads on subsequent runs
+- **Archive Caching**: Caches the probe release archive via `actions/cache` (keyed by resolved version, OS, and arch) to skip re-downloads on subsequent runs; a restored archive is re-verified against the release's `checksums.txt` on every run and re-downloaded if it does not match
 - **Linux Support**: Runs on Ubuntu runners (x86_64 and ARM64)
 - **Flexible Options**: Configurable verbose output and response time display
 - **Rich Testing**: Supports HTTP, SSH, Database, Browser, Shell, SMTP, and IMAP actions
