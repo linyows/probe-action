@@ -36,11 +36,11 @@ export async function run(): Promise<void> {
   )
   if (debug) core.info(`Using probe version: ${version}`)
 
-  // The binary lives in a stable directory under RUNNER_TEMP so it can be
-  // persisted across runs via actions/cache.
+  // The release archive lives in a stable directory under RUNNER_TEMP so it can
+  // be persisted across runs via actions/cache. It is re-verified on every run.
   const runnerTemp = process.env.RUNNER_TEMP || os.tmpdir()
   const probeDir = path.join(runnerTemp, 'probe-cache')
-  const cacheKey = `probe-${process.env.RUNNER_OS}-${process.env.RUNNER_ARCH}-${version}`
+  const cacheKey = `probe-archive-${process.env.RUNNER_OS}-${process.env.RUNNER_ARCH}-${version}`
 
   let cacheHit = false
   if (cacheEnabled) {

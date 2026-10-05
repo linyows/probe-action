@@ -52,11 +52,6 @@ export async function getBinaryVersion(binary: string): Promise<string | null> {
   }
 }
 
-// Compare two version strings ignoring a leading "v".
-function versionsMatch(a: string, b: string): boolean {
-  return a.replace(/^v/, '') === b.replace(/^v/, '')
-}
-
 // Parse a goreleaser-style checksums file ("<sha256>  <filename>" per line)
 // into a map of filename to lowercase hex digest.
 export function parseChecksums(content: string): Map<string, string> {
@@ -102,70 +97,84 @@ export interface EnsureOptions {
   probeDir: string
   platform: Platform
   debug?: boolean
+  downloadImpl?: (url: string, dest?: string) => Promise<string>
 }
 
-// Ensure a probe binary of the requested version exists in probeDir, downloading
-// and extracting it when necessary. Returns the absolute path to the binary.
+// Ensure a verified probe binary of the requested version is available and
+// return its absolute path. probeDir holds only the release archive so it can be
+// persisted via actions/cache. Because a restored cache cannot be trusted, the
+// archive is verified against the release's checksums.txt on every run (the
+// checksums are always fetched from the release, never from the cache), and the
+// binary is extracted into a fresh directory outside probeDir.
 export async function ensureProbeBinary(opts: EnsureOptions): Promise<string> {
-  const { version, probeDir, platform, debug = false } = opts
+  const {
+    version,
+    probeDir,
+    platform,
+    debug = false,
+    downloadImpl = tc.downloadTool,
+  } = opts
 
   fs.mkdirSync(probeDir, { recursive: true })
-  const binary = path.join(probeDir, 'probe')
-
-  // Skip download if an existing binary already matches the target version.
-  if (fs.existsSync(binary)) {
-    const existing = await getBinaryVersion(binary)
-    if (existing && versionsMatch(existing, version)) {
-      if (debug) {
-        core.info(
-          `Existing probe binary matches version ${version}, skipping download`,
-        )
-      }
-      return binary
-    }
-    if (debug) {
-      core.info(
-        `Existing probe version '${existing ?? 'unknown'}' does not match '${version}', re-downloading`,
-      )
-    }
-    // Remove the stale binary so the post-extract existence check below is
-    // meaningful even if the archive layout changes and does not contain it.
-    fs.rmSync(binary, { force: true })
-  }
 
   const baseUrl = `https://github.com/linyows/probe/releases/download/${version}`
   const assetName = `probe_${platform.os}_${platform.arch}.tar.gz`
   const url = `${baseUrl}/${assetName}`
   const checksumsUrl = `${baseUrl}/checksums.txt`
-  if (debug) core.info(`Downloading from: ${url}`)
+  const archive = path.join(probeDir, assetName)
 
-  let archive: string
-  try {
-    archive = await tc.downloadTool(url)
-  } catch (err) {
-    throw new Error(
-      `Failed to download probe from ${url}: ${String(err)}\n` +
-        'Please check if the version exists and supports your platform',
-    )
-  }
-
-  // Verify the archive against the release's checksums.txt before extracting,
-  // so a corrupted or tampered download is never executed.
   let checksums: string
   try {
-    checksums = fs.readFileSync(await tc.downloadTool(checksumsUrl), 'utf8')
+    checksums = fs.readFileSync(await downloadImpl(checksumsUrl), 'utf8')
   } catch (err) {
     throw new Error(
       `Failed to download checksums from ${checksumsUrl}: ${String(err)}`,
     )
   }
-  const digest = await verifyChecksum(archive, assetName, checksums)
-  if (debug) core.info(`Checksum verified: sha256:${digest}`)
 
-  await tc.extractTar(archive, probeDir)
+  let digest: string | undefined
+  if (fs.existsSync(archive)) {
+    try {
+      digest = await verifyChecksum(archive, assetName, checksums)
+      if (debug) core.info(`Cached archive verified: sha256:${digest}`)
+    } catch (err) {
+      core.warning(
+        `Cached archive failed verification, re-downloading: ${err instanceof Error ? err.message : String(err)}`,
+      )
+    }
+  }
 
+  if (!digest) {
+    // Remove whatever is at the archive path (a stale or tampered file, or
+    // anything else a restored cache left there) before downloading.
+    fs.rmSync(archive, { recursive: true, force: true })
+    if (debug) core.info(`Downloading from: ${url}`)
+    try {
+      await downloadImpl(url, archive)
+    } catch (err) {
+      throw new Error(
+        `Failed to download probe from ${url}: ${String(err)}\n` +
+          'Please check if the version exists and supports your platform',
+      )
+    }
+    try {
+      digest = await verifyChecksum(archive, assetName, checksums)
+    } catch (err) {
+      // Do not leave a bad archive behind to be cached.
+      fs.rmSync(archive, { force: true })
+      throw err
+    }
+    if (debug) core.info(`Checksum verified: sha256:${digest}`)
+  }
+
+  // Extract into a fresh directory next to probeDir (outside the cached path)
+  // so nothing restored from the cache is ever executed.
+  const binDir = fs.mkdtempSync(path.join(path.dirname(probeDir), 'probe-bin-'))
+  await tc.extractTar(archive, binDir)
+
+  const binary = path.join(binDir, 'probe')
   if (!fs.existsSync(binary)) {
-    throw new Error(`probe binary not found after extraction in ${probeDir}`)
+    throw new Error(`probe binary not found after extraction in ${binDir}`)
   }
   fs.chmodSync(binary, 0o755)
 

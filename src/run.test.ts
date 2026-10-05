@@ -1,9 +1,11 @@
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { execFileSync } from 'node:child_process'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   detectPlatform,
+  ensureProbeBinary,
   parseChecksums,
   parsePaths,
   sha256File,
@@ -124,5 +126,119 @@ describe('checksum verification', () => {
     await expect(verifyChecksum(file, 'probe.tar.gz', sums)).rejects.toThrow(
       /not found in checksums.txt/,
     )
+  })
+})
+
+describe('ensureProbeBinary', () => {
+  const platform = { os: 'linux', arch: 'x86_64' }
+  const assetName = 'probe_linux_x86_64.tar.gz'
+  let root: string
+  let probeDir: string
+  let goodArchive: string
+  let checksums: string
+
+  // Fake downloader serving checksums.txt and the release archive.
+  function makeDownload(archiveSource = goodArchive) {
+    return vi.fn(async (url: string, dest?: string) => {
+      const out = dest ?? path.join(root, `dl-${Math.random()}`)
+      if (url.endsWith('/checksums.txt')) {
+        fs.writeFileSync(out, checksums)
+      } else {
+        fs.copyFileSync(archiveSource, out)
+      }
+      return out
+    })
+  }
+
+  function archiveCalls(download: ReturnType<typeof makeDownload>) {
+    return download.mock.calls.filter(([url]) => url.endsWith(assetName))
+  }
+
+  beforeEach(async () => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'probe-action-ensure-'))
+    probeDir = path.join(root, 'probe-cache')
+    const src = path.join(root, 'src')
+    fs.mkdirSync(src)
+    fs.writeFileSync(path.join(src, 'probe'), '#!/bin/sh\necho v1.0.0\n')
+    goodArchive = path.join(root, 'good.tar.gz')
+    execFileSync('tar', ['-czf', goodArchive, '-C', src, 'probe'])
+    checksums = `${await sha256File(goodArchive)}  ${assetName}\n`
+  })
+
+  afterEach(() => {
+    fs.rmSync(root, { recursive: true, force: true })
+  })
+
+  it('downloads, verifies, and extracts on a cache miss', async () => {
+    const download = makeDownload()
+    const binary = await ensureProbeBinary({
+      version: 'v1.0.0', probeDir, platform, downloadImpl: download,
+    })
+    expect(fs.existsSync(binary)).toBe(true)
+    expect(path.dirname(path.dirname(binary))).toBe(root)
+    expect(binary.startsWith(probeDir)).toBe(false)
+    expect(fs.existsSync(path.join(probeDir, assetName))).toBe(true)
+    expect(archiveCalls(download)).toHaveLength(1)
+  })
+
+  it('reuses a cached archive that passes verification', async () => {
+    fs.mkdirSync(probeDir)
+    fs.copyFileSync(goodArchive, path.join(probeDir, assetName))
+    const download = makeDownload()
+    const binary = await ensureProbeBinary({
+      version: 'v1.0.0', probeDir, platform, downloadImpl: download,
+    })
+    expect(fs.existsSync(binary)).toBe(true)
+    expect(archiveCalls(download)).toHaveLength(0)
+    // checksums.txt is always fetched from the release, never trusted from cache.
+    expect(download).toHaveBeenCalledWith(expect.stringMatching(/checksums\.txt$/))
+  })
+
+  it('re-downloads when the cached archive has been tampered with', async () => {
+    fs.mkdirSync(probeDir)
+    fs.writeFileSync(path.join(probeDir, assetName), 'tampered')
+    const download = makeDownload()
+    const binary = await ensureProbeBinary({
+      version: 'v1.0.0', probeDir, platform, downloadImpl: download,
+    })
+    expect(fs.readFileSync(binary, 'utf8')).toContain('echo v1.0.0')
+    expect(archiveCalls(download)).toHaveLength(1)
+    expect(await sha256File(path.join(probeDir, assetName))).toBe(
+      await sha256File(goodArchive),
+    )
+  })
+
+  it('never uses a binary left in the cache directory', async () => {
+    fs.mkdirSync(probeDir)
+    fs.copyFileSync(goodArchive, path.join(probeDir, assetName))
+    fs.writeFileSync(path.join(probeDir, 'probe'), '#!/bin/sh\necho evil\n')
+    const binary = await ensureProbeBinary({
+      version: 'v1.0.0', probeDir, platform, downloadImpl: makeDownload(),
+    })
+    expect(fs.readFileSync(binary, 'utf8')).toContain('echo v1.0.0')
+  })
+
+  it('fails and removes the archive when the download does not verify', async () => {
+    const bad = path.join(root, 'bad.tar.gz')
+    fs.writeFileSync(bad, 'corrupted')
+    await expect(
+      ensureProbeBinary({
+        version: 'v1.0.0', probeDir, platform, downloadImpl: makeDownload(bad),
+      }),
+    ).rejects.toThrow(/Checksum mismatch/)
+    expect(fs.existsSync(path.join(probeDir, assetName))).toBe(false)
+  })
+
+  it('fails when checksums.txt cannot be fetched, even with a cached archive', async () => {
+    fs.mkdirSync(probeDir)
+    fs.copyFileSync(goodArchive, path.join(probeDir, assetName))
+    const download = vi.fn(async () => {
+      throw new Error('network down')
+    })
+    await expect(
+      ensureProbeBinary({
+        version: 'v1.0.0', probeDir, platform, downloadImpl: download,
+      }),
+    ).rejects.toThrow(/Failed to download checksums/)
   })
 })
