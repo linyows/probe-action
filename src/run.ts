@@ -1,7 +1,7 @@
+import * as crypto from 'node:crypto'
+import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import * as fs from 'node:fs'
-import * as crypto from 'node:crypto'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as tc from '@actions/tool-cache'
@@ -190,8 +190,8 @@ export async function ensureProbeBinary(opts: EnsureOptions): Promise<string> {
 // newline-separated entries. Surrounding quotes and whitespace are trimmed.
 export function parsePaths(pathInput: string, pathsInput: string): string[] {
   const raw = pathsInput.trim().length > 0 ? pathsInput : pathInput
+  // Split on \r?\n so Windows-style line endings do not leave a trailing \r.
   return raw
-    // Split on \r?\n so Windows-style line endings do not leave a trailing \r.
     .split(/\r?\n/)
     .map((p) => p.trim().replace(/^"|"$/g, '').trim())
     .filter((p) => p.length > 0)

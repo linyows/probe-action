@@ -69,7 +69,9 @@ export async function resolveVersion(
   }
 
   if (debug) {
-    core.info(`Failed to fetch from API, using fallback version ${FALLBACK_VERSION}`)
+    core.info(
+      `Failed to fetch from API, using fallback version ${FALLBACK_VERSION}`,
+    )
   }
   return FALLBACK_VERSION
 }

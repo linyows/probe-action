@@ -51288,12 +51288,12 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = run;
+const fs = __importStar(__nccwpck_require__(73024));
 const os = __importStar(__nccwpck_require__(48161));
 const path = __importStar(__nccwpck_require__(76760));
-const fs = __importStar(__nccwpck_require__(73024));
+const cache = __importStar(__nccwpck_require__(5116));
 const core = __importStar(__nccwpck_require__(37484));
 const exec = __importStar(__nccwpck_require__(95236));
-const cache = __importStar(__nccwpck_require__(5116));
 const resolve_version_1 = __nccwpck_require__(97974);
 const run_1 = __nccwpck_require__(79786);
 async function run() {
@@ -51326,8 +51326,9 @@ async function run() {
         try {
             const restored = await cache.restoreCache([probeDir], cacheKey);
             cacheHit = restored !== undefined;
-            if (debug)
+            if (debug) {
                 core.info(cacheHit ? `Cache restored: ${cacheKey}` : 'Cache not found');
+            }
         }
         catch (err) {
             core.warning(`Cache restore failed: ${String(err)}`);
@@ -51532,10 +51533,10 @@ exports.sha256File = sha256File;
 exports.verifyChecksum = verifyChecksum;
 exports.ensureProbeBinary = ensureProbeBinary;
 exports.parsePaths = parsePaths;
+const crypto = __importStar(__nccwpck_require__(77598));
+const fs = __importStar(__nccwpck_require__(73024));
 const os = __importStar(__nccwpck_require__(48161));
 const path = __importStar(__nccwpck_require__(76760));
-const fs = __importStar(__nccwpck_require__(73024));
-const crypto = __importStar(__nccwpck_require__(77598));
 const core = __importStar(__nccwpck_require__(37484));
 const exec = __importStar(__nccwpck_require__(95236));
 const tc = __importStar(__nccwpck_require__(33472));
@@ -51679,8 +51680,8 @@ async function ensureProbeBinary(opts) {
 // newline-separated entries. Surrounding quotes and whitespace are trimmed.
 function parsePaths(pathInput, pathsInput) {
     const raw = pathsInput.trim().length > 0 ? pathsInput : pathInput;
+    // Split on \r?\n so Windows-style line endings do not leave a trailing \r.
     return raw
-        // Split on \r?\n so Windows-style line endings do not leave a trailing \r.
         .split(/\r?\n/)
         .map((p) => p.trim().replace(/^"|"$/g, '').trim())
         .filter((p) => p.length > 0);

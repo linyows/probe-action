@@ -1,10 +1,10 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
+  FALLBACK_VERSION,
+  normalizeBool,
+  normalizeVersionTag,
   resolveVersion,
   sanitizeVersion,
-  normalizeVersionTag,
-  normalizeBool,
-  FALLBACK_VERSION,
 } from './resolve-version'
 
 describe('normalizeBool', () => {
@@ -54,14 +54,18 @@ function jsonResponse(body: unknown, ok = true, status = 200): Response {
 describe('resolveVersion', () => {
   it('returns a concrete tag unchanged without hitting the API', async () => {
     const fetchImpl = vi.fn()
-    const out = await resolveVersion('v0.20.1', { fetchImpl: fetchImpl as unknown as typeof fetch })
+    const out = await resolveVersion('v0.20.1', {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    })
     expect(out).toBe('v0.20.1')
     expect(fetchImpl).not.toHaveBeenCalled()
   })
 
   it('resolves "latest" from the GitHub API', async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({ tag_name: 'v9.9.9' }))
-    const out = await resolveVersion('latest', { fetchImpl: fetchImpl as unknown as typeof fetch })
+    const out = await resolveVersion('latest', {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    })
     expect(out).toBe('v9.9.9')
   })
 
@@ -79,7 +83,9 @@ describe('resolveVersion', () => {
 
   it('falls back when the API responds without a tag_name', async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({}))
-    const out = await resolveVersion('latest', { fetchImpl: fetchImpl as unknown as typeof fetch })
+    const out = await resolveVersion('latest', {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    })
     expect(out).toBe(FALLBACK_VERSION)
   })
 
@@ -87,13 +93,17 @@ describe('resolveVersion', () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error('network down')
     })
-    const out = await resolveVersion('latest', { fetchImpl: fetchImpl as unknown as typeof fetch })
+    const out = await resolveVersion('latest', {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    })
     expect(out).toBe(FALLBACK_VERSION)
   })
 
   it('falls back on a non-ok response', async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({}, false, 403))
-    const out = await resolveVersion('latest', { fetchImpl: fetchImpl as unknown as typeof fetch })
+    const out = await resolveVersion('latest', {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    })
     expect(out).toBe(FALLBACK_VERSION)
   })
 })

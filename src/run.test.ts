@@ -1,8 +1,8 @@
+import { execFileSync } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import { execFileSync } from 'node:child_process'
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   detectPlatform,
   ensureProbeBinary,
@@ -14,11 +14,17 @@ import {
 
 describe('detectPlatform', () => {
   it('maps x64 to x86_64 on linux', () => {
-    expect(detectPlatform('linux', 'x64')).toEqual({ os: 'linux', arch: 'x86_64' })
+    expect(detectPlatform('linux', 'x64')).toEqual({
+      os: 'linux',
+      arch: 'x86_64',
+    })
   })
 
   it('maps arm64 to arm64 on linux', () => {
-    expect(detectPlatform('linux', 'arm64')).toEqual({ os: 'linux', arch: 'arm64' })
+    expect(detectPlatform('linux', 'arm64')).toEqual({
+      os: 'linux',
+      arch: 'arm64',
+    })
   })
 
   it('rejects non-linux platforms', () => {
@@ -26,7 +32,9 @@ describe('detectPlatform', () => {
   })
 
   it('rejects unsupported architectures', () => {
-    expect(() => detectPlatform('linux', 'ia32')).toThrow(/Unsupported architecture/)
+    expect(() => detectPlatform('linux', 'ia32')).toThrow(
+      /Unsupported architecture/,
+    )
   })
 })
 
@@ -36,11 +44,17 @@ describe('parsePaths', () => {
   })
 
   it('prefers paths over path and splits on newlines', () => {
-    expect(parsePaths('ignored.yml', 'a.yml\nb.yml')).toEqual(['a.yml', 'b.yml'])
+    expect(parsePaths('ignored.yml', 'a.yml\nb.yml')).toEqual([
+      'a.yml',
+      'b.yml',
+    ])
   })
 
   it('drops empty lines and trims whitespace', () => {
-    expect(parsePaths('', '  a.yml \n\n   \n b.yml ')).toEqual(['a.yml', 'b.yml'])
+    expect(parsePaths('', '  a.yml \n\n   \n b.yml ')).toEqual([
+      'a.yml',
+      'b.yml',
+    ])
   })
 
   it('strips surrounding quotes', () => {
@@ -172,7 +186,10 @@ describe('ensureProbeBinary', () => {
   it('downloads, verifies, and extracts on a cache miss', async () => {
     const download = makeDownload()
     const binary = await ensureProbeBinary({
-      version: 'v1.0.0', probeDir, platform, downloadImpl: download,
+      version: 'v1.0.0',
+      probeDir,
+      platform,
+      downloadImpl: download,
     })
     expect(fs.existsSync(binary)).toBe(true)
     expect(path.dirname(path.dirname(binary))).toBe(root)
@@ -186,12 +203,17 @@ describe('ensureProbeBinary', () => {
     fs.copyFileSync(goodArchive, path.join(probeDir, assetName))
     const download = makeDownload()
     const binary = await ensureProbeBinary({
-      version: 'v1.0.0', probeDir, platform, downloadImpl: download,
+      version: 'v1.0.0',
+      probeDir,
+      platform,
+      downloadImpl: download,
     })
     expect(fs.existsSync(binary)).toBe(true)
     expect(archiveCalls(download)).toHaveLength(0)
     // checksums.txt is always fetched from the release, never trusted from cache.
-    expect(download).toHaveBeenCalledWith(expect.stringMatching(/checksums\.txt$/))
+    expect(download).toHaveBeenCalledWith(
+      expect.stringMatching(/checksums\.txt$/),
+    )
   })
 
   it('re-downloads when the cached archive has been tampered with', async () => {
@@ -199,7 +221,10 @@ describe('ensureProbeBinary', () => {
     fs.writeFileSync(path.join(probeDir, assetName), 'tampered')
     const download = makeDownload()
     const binary = await ensureProbeBinary({
-      version: 'v1.0.0', probeDir, platform, downloadImpl: download,
+      version: 'v1.0.0',
+      probeDir,
+      platform,
+      downloadImpl: download,
     })
     expect(fs.readFileSync(binary, 'utf8')).toContain('echo v1.0.0')
     expect(archiveCalls(download)).toHaveLength(1)
@@ -213,7 +238,10 @@ describe('ensureProbeBinary', () => {
     fs.copyFileSync(goodArchive, path.join(probeDir, assetName))
     fs.writeFileSync(path.join(probeDir, 'probe'), '#!/bin/sh\necho evil\n')
     const binary = await ensureProbeBinary({
-      version: 'v1.0.0', probeDir, platform, downloadImpl: makeDownload(),
+      version: 'v1.0.0',
+      probeDir,
+      platform,
+      downloadImpl: makeDownload(),
     })
     expect(fs.readFileSync(binary, 'utf8')).toContain('echo v1.0.0')
   })
@@ -223,7 +251,10 @@ describe('ensureProbeBinary', () => {
     fs.writeFileSync(bad, 'corrupted')
     await expect(
       ensureProbeBinary({
-        version: 'v1.0.0', probeDir, platform, downloadImpl: makeDownload(bad),
+        version: 'v1.0.0',
+        probeDir,
+        platform,
+        downloadImpl: makeDownload(bad),
       }),
     ).rejects.toThrow(/Checksum mismatch/)
     expect(fs.existsSync(path.join(probeDir, assetName))).toBe(false)
@@ -237,7 +268,10 @@ describe('ensureProbeBinary', () => {
     })
     await expect(
       ensureProbeBinary({
-        version: 'v1.0.0', probeDir, platform, downloadImpl: download,
+        version: 'v1.0.0',
+        probeDir,
+        platform,
+        downloadImpl: download,
       }),
     ).rejects.toThrow(/Failed to download checksums/)
   })

@@ -1,14 +1,14 @@
+import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import * as fs from 'node:fs'
+import * as cache from '@actions/cache'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
-import * as cache from '@actions/cache'
 import {
+  normalizeBool,
+  normalizeVersionTag,
   resolveVersion,
   sanitizeVersion,
-  normalizeVersionTag,
-  normalizeBool,
 } from './resolve-version'
 import { detectPlatform, ensureProbeBinary, parsePaths } from './run'
 
@@ -47,7 +47,9 @@ export async function run(): Promise<void> {
     try {
       const restored = await cache.restoreCache([probeDir], cacheKey)
       cacheHit = restored !== undefined
-      if (debug) core.info(cacheHit ? `Cache restored: ${cacheKey}` : 'Cache not found')
+      if (debug) {
+        core.info(cacheHit ? `Cache restored: ${cacheKey}` : 'Cache not found')
+      }
     } catch (err) {
       core.warning(`Cache restore failed: ${String(err)}`)
     }
