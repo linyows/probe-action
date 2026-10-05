@@ -9,8 +9,10 @@
   "scripts": {
     "build": "ncc build src/main.ts -o dist --source-map --license licenses.txt",
     "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome check --write .",
     "test": "vitest run",
-    "all": "npm run typecheck && npm run test && npm run build"
+    "all": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "@actions/cache": "^5.2.0",
@@ -19,6 +21,7 @@
     "@actions/tool-cache": "^2.0.2"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.15",
     "@types/node": "^24.13.3",
     "@vercel/ncc": "^0.44.1",
     "typescript": "^5.9.3",
