@@ -1,6 +1,6 @@
 name: 'Probe Action'
 description: 'Run probe workflow automation tool'
-author: 'linyows'
+author: 'mozership'
 
 inputs:
   path:
