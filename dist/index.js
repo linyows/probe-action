@@ -51460,7 +51460,7 @@ async function resolveVersion(version, opts = {}) {
         // Authenticate when a token is available to avoid API rate limiting.
         if (token)
             headers.Authorization = `token ${token}`;
-        const res = await fetchImpl('https://api.github.com/repos/linyows/probe/releases/latest', { headers });
+        const res = await fetchImpl('https://api.github.com/repos/mozership/probe/releases/latest', { headers });
         if (res.ok) {
             const data = (await res.json());
             const tag = data.tag_name?.trim();
@@ -51613,7 +51613,7 @@ async function verifyChecksum(archive, assetName, checksumsContent) {
 async function ensureProbeBinary(opts) {
     const { version, probeDir, platform, debug = false, downloadImpl = tc.downloadTool, } = opts;
     fs.mkdirSync(probeDir, { recursive: true });
-    const baseUrl = `https://github.com/linyows/probe/releases/download/${version}`;
+    const baseUrl = `https://github.com/mozership/probe/releases/download/${version}`;
     const assetName = `probe_${platform.os}_${platform.arch}.tar.gz`;
     const url = `${baseUrl}/${assetName}`;
     const checksumsUrl = `${baseUrl}/checksums.txt`;

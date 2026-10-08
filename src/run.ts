@@ -117,7 +117,7 @@ export async function ensureProbeBinary(opts: EnsureOptions): Promise<string> {
 
   fs.mkdirSync(probeDir, { recursive: true })
 
-  const baseUrl = `https://github.com/linyows/probe/releases/download/${version}`
+  const baseUrl = `https://github.com/mozership/probe/releases/download/${version}`
   const assetName = `probe_${platform.os}_${platform.arch}.tar.gz`
   const url = `${baseUrl}/${assetName}`
   const checksumsUrl = `${baseUrl}/checksums.txt`

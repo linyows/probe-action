@@ -51,7 +51,7 @@ export async function resolveVersion(
     if (token) headers.Authorization = `token ${token}`
 
     const res = await fetchImpl(
-      'https://api.github.com/repos/linyows/probe/releases/latest',
+      'https://api.github.com/repos/mozership/probe/releases/latest',
       { headers },
     )
     if (res.ok) {

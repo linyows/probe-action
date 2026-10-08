@@ -1,7 +1,7 @@
 Probe Action
 ==
 
-A GitHub Action that runs [probe](https://github.com/linyows/probe) workflows for testing, monitoring, and automation tasks.
+A GitHub Action that runs [probe](https://github.com/mozership/probe) workflows for testing, monitoring, and automation tasks.
 
 Features
 --
@@ -29,13 +29,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run probe tests
-        uses: linyows/probe-action@v1.2.1
+        uses: mozership/probe-action@v1.2.1
         with:
           path: 'tests/api-test.yml'
 
       # Multiple paths example
       - name: Run multiple probe tests
-        uses: linyows/probe-action@v1.2.1
+        uses: mozership/probe-action@v1.2.1
         with:
           paths: |
             tests/api-test.yml
@@ -45,7 +45,7 @@ jobs:
 
       # Working directory example
       - name: Run probe from specific directory
-        uses: linyows/probe-action@v1.2.1
+        uses: mozership/probe-action@v1.2.1
         with:
           path: 'workflow.yml'
           workdir: './tests'
@@ -111,7 +111,7 @@ The probe tool supports various built-in actions:
 - **Embedded**: Embedded job execution
 - **Browser**: Web UI automation and testing
 
-For detailed probe syntax and examples, see the [probe documentation](https://github.com/linyows/probe).
+For detailed probe syntax and examples, see the [probe documentation](https://github.com/mozership/probe).
 
 Platform Support
 --
@@ -126,7 +126,7 @@ Debugging
 Enable verbose output and response times for detailed information:
 
 ```yaml
-- uses: linyows/probe-action@v1.2.1
+- uses: mozership/probe-action@v1.2.1
   with:
     path: 'tests/debug-test.yml'
     options: '--verbose --rt'

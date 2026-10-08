@@ -126,12 +126,12 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Test single workflow
-        uses: linyows/probe-action@main
+        uses: mozership/probe-action@main
         with:
           path: test/basic-http.yml
 
       - name: Test multiple workflows
-        uses: linyows/probe-action@main
+        uses: mozership/probe-action@main
         with:
           paths: |
             test/basic-http.yml
