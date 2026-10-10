@@ -62,11 +62,35 @@ Inputs
 | `version` | Version of probe to use (a release tag such as `v0.20.1`, or `latest`; a bare `0.20.1` is normalized to `v0.20.1`) | No | `latest` |
 | `options` | Command line options for probe (e.g., "--verbose --rt") | No | `` |
 | `workdir` | Working directory to change to before running probe | No | `` |
+| `install-only` | Install probe and add it to `PATH` without running a workflow (true/false/yes/1) | No | `false` |
 | `action-debug` | Enable action debug output (true/false/yes/1) | No | `false` |
 | `cache` | Cache the probe binary across runs via `actions/cache` (set to `false` to disable) | No | `true` |
 | `github-token` | Token used for GitHub API calls (resolving the latest version) to avoid rate limiting | No | `${{ github.token }}` |
 
-*Either `path` or `paths` must be provided.
+*Either `path` or `paths` must be provided, unless `install-only` is set.
+
+Outputs
+--
+
+| Output | Description |
+|--------|-------------|
+| `probe-path` | Absolute path of the probe binary this action installed |
+
+Installing Probe Only
+--
+
+With `install-only`, the action downloads and verifies probe, adds it to `PATH`, and runs no workflow. Later steps of the job run probe themselves, which is how to use a subcommand such as `probe check` or `probe manifest`:
+
+```yaml
+- uses: mozership/probe-action@v1.3.0
+  with:
+    install-only: true
+    version: v1.23.0
+
+- run: probe check tests/api-test.yml
+```
+
+`install-only` cannot be combined with `path` or `paths`. The binary is also on `PATH`, and in the `probe-path` output, after a run that executes workflows.
 
 Sample Probe Workflow
 --

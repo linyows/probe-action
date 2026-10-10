@@ -51302,14 +51302,13 @@ async function run() {
     const versionInput = core.getInput('version') || 'latest';
     const options = core.getInput('options');
     const workdir = core.getInput('workdir');
+    const installOnly = (0, resolve_version_1.normalizeBool)(core.getInput('install-only'));
     const debug = (0, resolve_version_1.normalizeBool)(core.getInput('action-debug'));
     const cacheEnabled = core.getInput('cache') !== 'false';
     const token = core.getInput('github-token') || process.env.GITHUB_TOKEN;
     // Determine the workflow files to run.
     const paths = (0, run_1.parsePaths)(pathInput, pathsInput);
-    if (paths.length === 0) {
-        throw new Error("Either 'path' or 'paths' input must be provided");
-    }
+    (0, run_1.checkMode)(paths, installOnly);
     const platform = (0, run_1.detectPlatform)();
     if (debug)
         core.info(`Detected platform: ${platform.os}_${platform.arch}`);
@@ -51345,6 +51344,13 @@ async function run() {
         catch (err) {
             core.warning(`Cache save failed: ${String(err)}`);
         }
+    }
+    // Later steps of the job can run probe themselves, such as a subcommand.
+    core.addPath(path.dirname(binary));
+    core.setOutput('probe-path', binary);
+    if (installOnly) {
+        core.info(`Installed probe ${version}: ${binary}`);
+        return;
     }
     // Resolve the working directory (relative to the original working directory).
     const cwd = workdir ? path.resolve(process.cwd(), workdir) : process.cwd();
@@ -51532,6 +51538,7 @@ exports.parseChecksums = parseChecksums;
 exports.sha256File = sha256File;
 exports.verifyChecksum = verifyChecksum;
 exports.ensureProbeBinary = ensureProbeBinary;
+exports.checkMode = checkMode;
 exports.parsePaths = parsePaths;
 const crypto = __importStar(__nccwpck_require__(77598));
 const fs = __importStar(__nccwpck_require__(73024));
@@ -51674,6 +51681,18 @@ async function ensureProbeBinary(opts) {
         core.info(`Probe binary ready: ${v ?? 'version check failed'}`);
     }
     return binary;
+}
+// Check that the inputs say one thing to do: run the workflows of path/paths,
+// or, with install-only, install probe and run nothing. A missing path is an
+// error rather than an install, so that a job meant to run a workflow never
+// passes having run none.
+function checkMode(paths, installOnly) {
+    if (installOnly && paths.length > 0) {
+        throw new Error("'install-only' cannot be used with 'path' or 'paths'");
+    }
+    if (!installOnly && paths.length === 0) {
+        throw new Error("Either 'path' or 'paths' input must be provided");
+    }
 }
 // Parse the path/paths inputs into a clean list of workflow file paths.
 // GitHub Actions passes multiline strings verbatim, so "paths" may contain

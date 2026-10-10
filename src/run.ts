@@ -185,6 +185,19 @@ export async function ensureProbeBinary(opts: EnsureOptions): Promise<string> {
   return binary
 }
 
+// Check that the inputs say one thing to do: run the workflows of path/paths,
+// or, with install-only, install probe and run nothing. A missing path is an
+// error rather than an install, so that a job meant to run a workflow never
+// passes having run none.
+export function checkMode(paths: string[], installOnly: boolean): void {
+  if (installOnly && paths.length > 0) {
+    throw new Error("'install-only' cannot be used with 'path' or 'paths'")
+  }
+  if (!installOnly && paths.length === 0) {
+    throw new Error("Either 'path' or 'paths' input must be provided")
+  }
+}
+
 // Parse the path/paths inputs into a clean list of workflow file paths.
 // GitHub Actions passes multiline strings verbatim, so "paths" may contain
 // newline-separated entries. Surrounding quotes and whitespace are trimmed.
