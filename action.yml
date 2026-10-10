@@ -21,6 +21,10 @@ inputs:
     description: 'Working directory to change to before running probe'
     required: false
     default: ''
+  install-only:
+    description: 'Install probe and add it to PATH without running a workflow, for later steps to run probe themselves (true/false/yes/1)'
+    required: false
+    default: 'false'
   action-debug:
     description: 'Enable action debug output (true/false/yes/1)'
     required: false
@@ -33,6 +37,10 @@ inputs:
     description: 'Token used for GitHub API calls (resolving the latest version) to avoid rate limiting'
     required: false
     default: ${{ github.token }}
+
+outputs:
+  probe-path:
+    description: 'Absolute path of the probe binary this action installed'
 
 runs:
   using: 'node24'

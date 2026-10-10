@@ -10,7 +10,7 @@ import {
   resolveVersion,
   sanitizeVersion,
 } from './resolve-version'
-import { detectPlatform, ensureProbeBinary, parsePaths } from './run'
+import { checkMode, detectPlatform, ensureProbeBinary, parsePaths } from './run'
 
 export async function run(): Promise<void> {
   const pathInput = core.getInput('path')
@@ -18,15 +18,14 @@ export async function run(): Promise<void> {
   const versionInput = core.getInput('version') || 'latest'
   const options = core.getInput('options')
   const workdir = core.getInput('workdir')
+  const installOnly = normalizeBool(core.getInput('install-only'))
   const debug = normalizeBool(core.getInput('action-debug'))
   const cacheEnabled = core.getInput('cache') !== 'false'
   const token = core.getInput('github-token') || process.env.GITHUB_TOKEN
 
   // Determine the workflow files to run.
   const paths = parsePaths(pathInput, pathsInput)
-  if (paths.length === 0) {
-    throw new Error("Either 'path' or 'paths' input must be provided")
-  }
+  checkMode(paths, installOnly)
 
   const platform = detectPlatform()
   if (debug) core.info(`Detected platform: ${platform.os}_${platform.arch}`)
@@ -65,6 +64,14 @@ export async function run(): Promise<void> {
     } catch (err) {
       core.warning(`Cache save failed: ${String(err)}`)
     }
+  }
+
+  // Later steps of the job can run probe themselves, such as a subcommand.
+  core.addPath(path.dirname(binary))
+  core.setOutput('probe-path', binary)
+  if (installOnly) {
+    core.info(`Installed probe ${version}: ${binary}`)
+    return
   }
 
   // Resolve the working directory (relative to the original working directory).

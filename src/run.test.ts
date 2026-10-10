@@ -4,6 +4,7 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  checkMode,
   detectPlatform,
   ensureProbeBinary,
   parseChecksums,
@@ -74,6 +75,24 @@ describe('parsePaths', () => {
 // sha256("hello\n")
 const HELLO_SHA256 =
   '5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03'
+
+describe('checkMode', () => {
+  it('accepts workflows to run', () => {
+    expect(() => checkMode(['a.yml'], false)).not.toThrow()
+  })
+
+  it('accepts install-only without a workflow', () => {
+    expect(() => checkMode([], true)).not.toThrow()
+  })
+
+  it('rejects running nothing without install-only', () => {
+    expect(() => checkMode([], false)).toThrow(/'path' or 'paths'/)
+  })
+
+  it('rejects install-only with a workflow', () => {
+    expect(() => checkMode(['a.yml'], true)).toThrow(/install-only/)
+  })
+})
 
 describe('parseChecksums', () => {
   it('parses goreleaser checksum lines', () => {

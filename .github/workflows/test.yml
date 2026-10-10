@@ -69,6 +69,27 @@ jobs:
           version: v0.20.1
           cache: false
 
+  test-install-only:
+    name: Test Install Only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install probe without running a workflow
+        id: probe
+        uses: ./
+        with:
+          install-only: true
+          version: v1.23.0
+
+      - name: Run probe from PATH
+        run: |
+          probe --version | grep -F 1.23.0
+          test "$(command -v probe)" = "$PROBE_PATH"
+          probe manifest init mozership/probe-greet | grep -F 'name: greet'
+        env:
+          PROBE_PATH: ${{ steps.probe.outputs.probe-path }}
+
   test-platforms:
     name: Test Cross-Platform
     runs-on: ${{ matrix.os }}
